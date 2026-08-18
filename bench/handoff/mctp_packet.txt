@@ -1,0 +1,16 @@
+# TASK
+Take over bug #43: fix the intermittent data loss during partition migration in NodeTransfer.
+
+# DECISIONS
+- [dec_leases] (asserted) Use time-bounded leases instead of distributed locking for ownership. Reason: latency testing showed lock contention stalled migrations under load. Evidence: benchmark run bench/lock_vs_lease.json.
+- [dec_handoff] (asserted) During migration, NodeTransfer must renew the lease BEFORE copying node state; otherwise the stale owner keeps accepting writes and they are lost. This is the root cause of bug #43.
+
+# ARTIFACTS (references — retrieve on demand)
+- [art_nodetransfer] (asserted) src/shard/NodeTransfer.java [java] symbols: migrate(PartitionId, ShardId), copyNodeState(PartitionId, ShardId) · hash:fdf5ba13 · ~96 tok · RETRIEVE art_nodetransfer for full source
+- [art_bug43] (asserted) Bug report #43: under load, destination shard begins copying while source shard still accepts writes; last writes are lost. Timing-dependent.
+- [art_leasemanager] (asserted) src/shard/LeaseManager.java [java] symbols: isOwner(PartitionId), renew(PartitionId, Duration) · hash:8ed7707e · ~36 tok · RETRIEVE art_leasemanager for full source
+- [art_partitionmap] (asserted) src/shard/PartitionMap.java [java] symbols: ownerOf(PartitionId), setOwner(PartitionId, ShardId) · hash:ca51fa8b · ~32 tok · RETRIEVE art_partitionmap for full source
+
+# ENTITIES
+- [ent_lease] (asserted) Lease ownership model: a partition is owned via a time-bounded lease; writes are only valid while the lease is held and unexpired.
+- [ent_partition] (asserted) PartitionManager: coordinates partition assignment and migration across shards.
