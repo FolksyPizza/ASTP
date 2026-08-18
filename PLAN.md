@@ -391,19 +391,20 @@ Compare against a **plain text-file** handoff baseline under identical budget.
 - **Context quality** — relevance, stale information removed, missing-information rate
 
 ### 8.6 Prototype result (recorded — mechanics probe, `bench/viability_test.py`)
-Flat structured context **446 tokens** → MCTP packet **385 tokens** (~**13.7%** reduction).
+Flat node dump **456 tokens** → MCTP packet **420 tokens** (~**7.9%** reduction; tiktoken
+`o200k_base`).
 
 Interpretation — this **does NOT prove** end-to-end agent improvement, better task
 performance, or final compression capability. The baseline is deliberately lean (node
-contents only, no transcript filler), so 13.7% is a **floor**. It **does demonstrate**:
+contents only, no transcript filler), so 7.9% is a **floor**. It **does demonstrate**:
 structured representation is viable, stale info is removed, irrelevant info is filtered,
 and important relationships are preserved. Model-in-the-loop tests are required next.
 
 ### 8.6.1 Two-model handoff probe (recorded — `bench/handoff/`)
 Two isolated Claude "Agent B" instances, identical neutral question ("fix bug #43"), blind
-to everything but their assigned context. Condition A = raw Agent-A transcript (~**815**
+to everything but their assigned context. Condition A = raw Agent-A transcript (**783**
 tokens: file dumps, benchmark output, the *abandoned* locking approach). Condition B = MCTP
-packet (~**401** tokens). ~**51% context reduction.**
+packet (**420** tokens). ~**46% upfront context reduction** (tiktoken `o200k_base`).
 
 Result: **correctness parity** — both B's independently gave the correct mechanism
 (time-bounded leases), the correct ordering constraint (renew lease *before* copying node
@@ -422,7 +423,7 @@ cost, not general compression or cross-model-family transfer.
 
 ### 8.6.2 Re-run after artifact references (recorded — fix confirmed)
 Implemented artifact references (`assert_artifact` → `{path, hash, language, symbols}` +
-blob store + `RETRIEVE <id>` retrieve-on-demand) and re-ran the MCTP condition (~411 tok
+blob store + `RETRIEVE <id>` retrieve-on-demand) and re-ran the MCTP condition (**420**-token
 packet). Outcome:
 - Using the reference **symbols** alone, B pinpointed the exact change site — `migrate()`,
   before `copyNodeState()` — with no full source yet. The old vague "I'd need the code" gap
