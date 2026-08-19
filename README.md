@@ -19,8 +19,8 @@ transferring an explicit, provenance-tracked representation of state, with sourc
 available on demand.
 
 Scope is deliberately limited. MCTP does not attempt to solve AI memory in general, does not
-replace retrieval, and does not guarantee optimal context selection. See `PLAN.md` §2 for the
-full list of non-goals.
+replace retrieval, and does not guarantee optimal context selection. See
+[docs/DESIGN.md](docs/DESIGN.md) for the full list of non-goals.
 
 ## Architecture
 
@@ -42,20 +42,19 @@ provide artifacts as references, and retrieve heavy content on demand.
 The protocol is split into a Core layer (state representation, storage, audit log, retrieval,
 provenance, transfer — usable with no trained models) and an optional Intelligence Layer
 (learned ranking, sufficiency prediction, adaptive feeding). Only Core is the portable
-protocol. See `PLAN.md` §3.
+protocol. See [docs/DESIGN.md](docs/DESIGN.md).
 
 ## Repository layout
 
 ```
 core/mctp/      Core reference implementation (event-sourced store, selector, transfer)
-docs/           schema (schema-v0.1.md) and experiment record (EXPERIMENTS.md)
-bench/          local viability probe and handoff contexts
+docs/           design (DESIGN.md), schema (schema-v0.1.md), experiments (EXPERIMENTS.md)
+bench/          local viability probe and handoff example
 intelligence/   optional Intelligence Layer (design notes)
-PLAN.md         full design document
 ```
 
 The evaluation harness lives in the companion repository
-[MCTP-Bench](../MCTP-Bench).
+[MCTP-Bench](https://github.com/FolksyPizza/MCTP-Bench).
 
 ## Current results
 
@@ -64,7 +63,8 @@ its costs, not as a general performance claim. The evaluation covers four hand-a
 scenarios, a single trial per condition, all runs using Claude models, with task success
 judged by keyword-based checks rather than human review. Token counts use the tiktoken
 `o200k_base` encoding; the direction of each comparison is the same under the other tokenizers
-tested (see [MCTP-Bench/results/token_comparison.md](../MCTP-Bench/results/token_comparison.md)).
+tested (see the [token comparison](https://github.com/FolksyPizza/MCTP-Bench/blob/main/results/token_comparison.md)
+in MCTP-Bench).
 
 Each scenario is run under two conditions — a `flat` baseline (the raw Agent-A transcript) and
 an `mctp` condition (the Core selector packet with retrieve-on-demand) — by an isolated Claude
@@ -81,14 +81,18 @@ retrieval cost, not just the initial packet.
 | auth_migration | mctp | pass | 341 | 95 | 436 | 2 | 0 |
 | artifact_selection | flat | pass | 184 | 0 | 184 | 0 | 0 |
 | artifact_selection | mctp | pass | 103 | 34 | 137 | 1 | 0 |
+| payment_idempotency | flat | pass | 2319 | 0 | 2319 | 0 | 0 |
+| payment_idempotency | mctp | pass | 486 | 159 | 645 | 2 | 0 |
 
 Every condition passed the checks with no misleading answers, including both `flat` baselines.
 Because the baseline also passed, these scenarios compare context cost at equal task success;
 they do not demonstrate a correctness or reliability advantage for MCTP, and larger or more
 adversarial scenarios would be needed to test for one. On cost, the `mctp` condition reduced
-total tokens in three of four scenarios (roughly 5–35%) and increased them in one
-(`auth_migration`, about +50%), where the flat transcript was already concise and the receiver
-over-retrieved.
+total tokens in four of five scenarios and increased them in one. The effect scales with how
+much of the context is prunable: the ~2,300-token `payment_idempotency` investigation saw a
+−72% total reduction, while the already-concise ~290-token `auth_migration` transcript saw
+about +50%, where the packet's structure and two pulls exceeded the small baseline. Below
+roughly 1,000 tokens there is often little to prune.
 
 Full methodology, per-run data, and interpretation are in
 [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md).

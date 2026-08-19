@@ -1,6 +1,6 @@
 """A small but realistic handoff scenario for the viability probe.
 
-Story (the Minecraft Folia example from PLAN.md):
+Story (a Minecraft Folia example):
   - Agent A investigated intermittent data loss during partition migration (bug #43).
   - A explored an unrelated subsystem earlier, and A's FIRST decision (distributed
     locking) was later SUPERSEDED by a leasing decision after latency testing.

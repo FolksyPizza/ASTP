@@ -26,7 +26,7 @@ Two execution paths are used, kept separate:
    returning the requested artifact. Results are logged via `record_run(...)` and tagged
    `runner=claude-subagent`.
 
-The unit of data is the episode (PLAN.md §6.2): `{scenario, condition, runner,
+The unit of data is the episode (see [DESIGN.md](DESIGN.md)): `{scenario, condition, runner,
 context_tokens, packet_node_ids, retrieved_ids, retrieved_tokens, codebase_reads,
 used_node_ids, outcome_pass, criteria, misleading}`, written to
 `MCTP-Bench/results/episodes.jsonl`.
@@ -41,6 +41,10 @@ used_node_ids, outcome_pass, criteria, misleading}`, written to
   Agent B must not regress to sessions. Contains a superseded session-store decision.
 - `artifact_selection` (artifact retrieval) — a configuration value located in one file among
   several. Contains a look-alike distractor (a cache pool of 50 versus the DB pool of 20).
+- `payment_idempotency` (larger repository task) — a duplicate-charge investigation with a
+  ~2,300-token flat transcript. Correct fix: deduplicate by idempotency key before charging.
+  Contains two superseded approaches (a per-user lock and a timestamp heuristic) and several
+  files that are read but irrelevant.
 
 ## Results (runner = claude-subagent, n = 1 per condition, tokenizer = tiktoken o200k_base)
 
@@ -54,12 +58,14 @@ used_node_ids, outcome_pass, criteria, misleading}`, written to
 | auth_migration | mctp | pass | 341 | 95 | 436 | 2 | 0 |
 | artifact_selection | flat | pass | 184 | 0 | 184 | 0 | 0 |
 | artifact_selection | mctp | pass | 103 | 34 | 137 | 1 | 0 |
+| payment_idempotency | flat | pass | 2319 | 0 | 2319 | 0 | 0 |
+| payment_idempotency | mctp | pass | 486 | 159 | 645 | 2 | 0 |
 
 Total-token change (mctp relative to flat): bug43 −34.5%, cache_staleness −5.0%,
-artifact_selection −25.5%, auth_migration +49.8%. Upfront-context change: bug43 −46.4%,
-cache_staleness −25.1%, artifact_selection −44.0%, auth_migration +17.2%. The direction of
-each comparison is unchanged under the other tokenizers (see
-`MCTP-Bench/results/token_comparison.md`).
+artifact_selection −25.5%, auth_migration +49.8%, payment_idempotency −72.2%. Upfront-context
+change: bug43 −46.4%, cache_staleness −25.1%, artifact_selection −44.0%, auth_migration +17.2%,
+payment_idempotency −79.0%. The direction of each comparison is unchanged under the other
+tokenizers (see `MCTP-Bench/results/token_comparison.md`).
 
 MockRunner rows in `episodes.jsonl` reproduce the same token and pull structure, confirming
 the harness independently of any model.
@@ -70,10 +76,15 @@ the harness independently of any model.
    passed, this study compares context cost at equal task success; it does not demonstrate a
    correctness or reliability advantage for MCTP. Task success is judged by keyword-based
    checks, not human review.
-2. Token reduction is real but not universal. MCTP reduced total tokens in three of four
-   scenarios (5–35%) and upfront context in three of four (25–46%). In `auth_migration` it was
-   token-worse (+49.8% total, +17.2% upfront) because the flat transcript was already concise
-   and the mctp agent made two pulls. Token reduction should not be treated as the headline.
+2. Token reduction is real but not universal, and it scales with the amount of prunable
+   context. MCTP reduced total tokens in four of five scenarios and was token-worse in one.
+   The effect tracks how much of the flat context is prunable (irrelevant files, dead-ends,
+   stale decisions): `payment_idempotency`, a ~2,300-token investigation full of ruled-out
+   suspects, saw −72.2% total; `auth_migration`, a ~290-token already-concise transcript with
+   little to prune, saw +49.8% total, where the packet's structural overhead plus two pulls
+   exceeded the baseline. Below roughly 1,000 tokens there is often little to prune, so MCTP's
+   overhead can dominate; the benefit appears in larger, noisier contexts. Token reduction
+   should not be treated as the headline.
 3. Receiver over-retrieval erodes the total-token advantage. In `cache_staleness` and
    `auth_migration` the mctp agent produced a correct answer from references before retrieving,
    then made confirmatory pulls that were not strictly necessary. This is a receiver-side
@@ -83,7 +94,10 @@ the harness independently of any model.
    `auth_migration` the flat agent cited the rejected "scale the store" sub-option, while the
    mctp agent could not, because the selector excluded the superseded session decision
    entirely. This suggests superseded decisions may need to be delivered tagged as rejected
-   rather than omitted, so the receiver knows what not to revisit (relevant to PLAN.md §4.6).
+   rather than omitted, so the receiver knows what not to revisit (relevant to the
+   retraction-versus-maintenance design in [DESIGN.md](DESIGN.md)). The same pattern recurred in
+   `payment_idempotency`: the mctp agent knew the lock and heuristic approaches were superseded
+   but could not state why they specifically failed, while the flat agent could.
 5. Selective transfer avoids distractor content. In `artifact_selection` the mctp condition
    delivered only the relevant reference; the agent made one targeted retrieve and was never
    exposed to the look-alike cache pool value. The flat agent had all files inline and answered
@@ -94,7 +108,7 @@ the harness independently of any model.
    model, or a transcript omitting the rejection, could still be misled; untested.
 7. Artifact references resolve the earlier representation gap. Replacing prose-summary
    artifacts with references (`{path, hash, symbols}`) plus retrieve-on-demand converted a
-   vague request for source into a precise, targeted retrieval (PLAN.md §8.6.1, §8.6.2).
+   vague request for source into a precise, targeted retrieval.
 
 ## Data and artifact index
 - Episodes: `MCTP-Bench/results/episodes.jsonl`
@@ -103,14 +117,15 @@ the harness independently of any model.
 - Scenarios: `MCTP-Bench/scenarios/{bug43,cache_staleness}.py`
 - Core implementation: `MCTP/core/mctp/{model,store,retrieval,transfer}.py`
 - Raw handoff contexts (bug43): `MCTP/bench/handoff/`
-- Design and interpretation: `MCTP/PLAN.md` §3.5, §4.2, §6.2, §8.5–8.7
+- Design and interpretation: [docs/DESIGN.md](DESIGN.md)
 
 ## Limitations
 - Single trial per condition; no variance is reported.
 - All model runs use Claude; there is no cross-model-family evidence yet.
 - `check()` is a keyword heuristic, not a semantic grader.
 - Scenarios are small and hand-authored; the MCTP graphs are authored rather than produced by
-  an extractor, so extraction fidelity is not yet measured (PLAN.md open question #8).
+  an extractor, so extraction fidelity is not yet measured (an open research question; see
+  [DESIGN.md](DESIGN.md)).
 - Token counts use tiktoken (OpenAI encodings) and the chars/4 heuristic. Open-model
   tokenizers (Qwen, Llama, and similar) are supported by the harness but were not available in
   this environment, so cross-family tokenization is not yet reported.

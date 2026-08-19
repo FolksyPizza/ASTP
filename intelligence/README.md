@@ -20,4 +20,4 @@ Components planned here (all replace/augment Core's baseline, none change the pr
 
 The Core audit log is the training data: for each handoff, nodes B had to pull that were
 **not** in the packet = misses (recall labels); packet nodes B never used = over-inclusion
-(precision labels). See `PLAN.md` §6.
+(precision labels). See the feedback interface in [../docs/DESIGN.md](../docs/DESIGN.md).
