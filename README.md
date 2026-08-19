@@ -1,4 +1,4 @@
-# Model Context Transfer Protocol (MCTP)
+# Model Context Transfer Protocol
 
 MCTP is a protocol for reconstructing model-relevant state between AI models and agents.
 Instead of transferring an entire conversation history, MCTP represents the important state
