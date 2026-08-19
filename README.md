@@ -48,7 +48,7 @@ protocol. See [docs/DESIGN.md](docs/DESIGN.md).
 
 ```
 core/mctp/      Core reference implementation (event-sourced store, selector, transfer)
-docs/           design (DESIGN.md), schema (schema-v0.1.md), experiments (EXPERIMENTS.md)
+docs/           DESIGN.md (rationale), ARCHITECTURE.md (mechanics), schema-v0.1.md, EXPERIMENTS.md
 bench/          local viability probe and handoff example
 intelligence/   optional Intelligence Layer (design notes)
 ```
@@ -59,43 +59,38 @@ The evaluation harness lives in the companion repository
 ## Current results
 
 These results are preliminary and should be read as an existence check of the mechanism and
-its costs, not as a general performance claim. The evaluation covers four hand-authored
-scenarios, a single trial per condition, all runs using Claude models, with task success
-judged by keyword-based checks rather than human review. Token counts use the tiktoken
-`o200k_base` encoding; the direction of each comparison is the same under the other tokenizers
-tested (see the [token comparison](https://github.com/FolksyPizza/MCTP-Bench/blob/main/results/token_comparison.md)
-in MCTP-Bench).
+its costs, not as a general performance claim. The evaluation covers ten hand-authored
+scenarios, a single trial per condition, all runs using Claude models, with task success judged
+by keyword-based checks rather than human review. Each scenario is run under two conditions — a
+`flat` baseline (the raw Agent-A transcript) and an `mctp` condition (the Core selector packet
+with retrieve-on-demand) — by an isolated Claude subagent that sees only its context and an
+identical neutral task. Reported totals include retrieval cost, not just the initial packet.
+Token counts use the tiktoken `o200k_base` encoding; the direction of each comparison holds
+under the other tokenizers tested.
 
-Each scenario is run under two conditions — a `flat` baseline (the raw Agent-A transcript) and
-an `mctp` condition (the Core selector packet with retrieve-on-demand) — by an isolated Claude
-subagent that sees only its context and an identical neutral task. Reported totals include
-retrieval cost, not just the initial packet.
+Across the ten scenarios (20 conditions): the `flat` baseline passed all ten; the `mctp`
+condition passed nine and failed one. On the nine where both pass, this compares context cost at
+equal task success and does not demonstrate a correctness advantage for MCTP. The one failure is
+instructive — in `hidden_constraint` a required constraint was present in the transcript but not
+linked to the task in the graph, so the packet omitted it and the receiver could not answer;
+extraction and linking fidelity, not the selector, is the ceiling.
 
-| Scenario | Condition | Pass | Context tok | Retrieved tok | Total tok | Pulls | Misleading |
-|----------|-----------|------|-------------|---------------|-----------|-------|------------|
-| bug43 | flat | pass | 783 | 0 | 783 | 0 | 0 |
-| bug43 | mctp | pass | 420 | 93 | 513 | 1 | 0 |
-| cache_staleness | flat | pass | 557 | 0 | 557 | 0 | 0 |
-| cache_staleness | mctp | pass | 417 | 112 | 529 | 2 | 0 |
-| auth_migration | flat | pass | 291 | 0 | 291 | 0 | 0 |
-| auth_migration | mctp | pass | 341 | 95 | 436 | 2 | 0 |
-| artifact_selection | flat | pass | 184 | 0 | 184 | 0 | 0 |
-| artifact_selection | mctp | pass | 103 | 34 | 137 | 1 | 0 |
-| payment_idempotency | flat | pass | 2319 | 0 | 2319 | 0 | 0 |
-| payment_idempotency | mctp | pass | 486 | 159 | 645 | 2 | 0 |
+On cost, MCTP reduced total tokens in eight of ten scenarios and increased them in two. The
+effect scales with how much of the context is prunable:
 
-Every condition passed the checks with no misleading answers, including both `flat` baselines.
-Because the baseline also passed, these scenarios compare context cost at equal task success;
-they do not demonstrate a correctness or reliability advantage for MCTP, and larger or more
-adversarial scenarios would be needed to test for one. On cost, the `mctp` condition reduced
-total tokens in four of five scenarios and increased them in one. The effect scales with how
-much of the context is prunable: the ~2,300-token `payment_idempotency` investigation saw a
-−72% total reduction, while the already-concise ~290-token `auth_migration` transcript saw
-about +50%, where the packet's structure and two pulls exceeded the small baseline. Below
-roughly 1,000 tokens there is often little to prune.
+| Scenario | flat total | mctp total | Δ total |
+|----------|-----------:|-----------:|--------:|
+| outage_investigation (large, noisy) | 2476 | 828 | −67% |
+| payment_idempotency (large, noisy) | 2319 | 645 | −72% |
+| bug43 (medium) | 783 | 513 | −35% |
+| auth_migration (small, already concise) | 291 | 436 | +50% |
 
-Full methodology, per-run data, and interpretation are in
-[docs/EXPERIMENTS.md](docs/EXPERIMENTS.md).
+Below roughly 1,000 tokens there is often little to prune, so MCTP's structural overhead and any
+retrieval can exceed the baseline; the benefit appears in larger, noisier contexts.
+
+Full per-scenario descriptions are in the MCTP-Bench
+[scenarios doc](https://github.com/FolksyPizza/MCTP-Bench/blob/main/docs/SCENARIOS.md), and full
+methodology, per-run data, and interpretation are in [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md).
 
 ## Limitations
 

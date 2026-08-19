@@ -45,6 +45,18 @@ used_node_ids, outcome_pass, criteria, misleading}`, written to
   ~2,300-token flat transcript. Correct fix: deduplicate by idempotency key before charging.
   Contains two superseded approaches (a per-user lock and a timestamp heuristic) and several
   files that are read but irrelevant.
+- `schema_migration` (larger task, hard constraints) — a zero-downtime column migration.
+  Correct fix: expand/contract; never a blocking ALTER or a maintenance window.
+- `api_versioning` (decision transfer) — v2 API auth. Correct fix: Bearer token in the
+  Authorization header; do not reintroduce the deprecated URL query-string token.
+- `flaky_test` (coding handoff) — a time-dependent flaky test. Correct fix: inject a Clock and
+  control time; not a retry or sleep band-aid.
+- `hidden_constraint` (negative control) — a bulk-delete endpoint whose GDPR soft-delete
+  constraint is present in the transcript but not linked to the task in the graph.
+- `outage_investigation` (larger task) — a ~2,500-token cascading-outage RCA. Correct fix:
+  single-flight coalescing on the cache read path plus a rate-based circuit breaker; not scaling
+  out or raising timeouts. Full descriptions of all scenarios are in the MCTP-Bench repository's
+  `docs/SCENARIOS.md`.
 
 ## Results (runner = claude-subagent, n = 1 per condition, tokenizer = tiktoken o200k_base)
 
@@ -60,31 +72,42 @@ used_node_ids, outcome_pass, criteria, misleading}`, written to
 | artifact_selection | mctp | pass | 103 | 34 | 137 | 1 | 0 |
 | payment_idempotency | flat | pass | 2319 | 0 | 2319 | 0 | 0 |
 | payment_idempotency | mctp | pass | 486 | 159 | 645 | 2 | 0 |
+| schema_migration | flat | pass | 717 | 0 | 717 | 0 | 0 |
+| schema_migration | mctp | pass | 379 | 227 | 606 | 3 | 0 |
+| api_versioning | flat | pass | 299 | 0 | 299 | 0 | 0 |
+| api_versioning | mctp | pass | 278 | 0 | 278 | 0 | 0 |
+| flaky_test | flat | pass | 386 | 0 | 386 | 0 | 0 |
+| flaky_test | mctp | pass | 287 | 114 | 401 | 3 | 0 |
+| hidden_constraint | flat | pass | 300 | 0 | 300 | 0 | 0 |
+| hidden_constraint | mctp | **fail** | 190 | 0 | 190 | 0 | 0 |
+| outage_investigation | flat | pass | 2476 | 0 | 2476 | 0 | 0 |
+| outage_investigation | mctp | pass | 503 | 325 | 828 | 4 | 0 |
 
-Total-token change (mctp relative to flat): bug43 −34.5%, cache_staleness −5.0%,
-artifact_selection −25.5%, auth_migration +49.8%, payment_idempotency −72.2%. Upfront-context
-change: bug43 −46.4%, cache_staleness −25.1%, artifact_selection −44.0%, auth_migration +17.2%,
-payment_idempotency −79.0%. The direction of each comparison is unchanged under the other
-tokenizers (see `MCTP-Bench/results/token_comparison.md`).
+Every `flat` condition passed; every `mctp` condition passed except `hidden_constraint`, where
+the packet omitted a critical constraint (finding 8). Total-token change (mctp relative to
+flat): bug43 −34.5%, cache_staleness −5.0%, artifact_selection −25.5%, auth_migration +49.8%,
+payment_idempotency −72.2%, schema_migration −15.5%, api_versioning −7.0%, flaky_test +3.9%,
+hidden_constraint −36.7%, outage_investigation −66.6%. The direction of each comparison is
+unchanged under the other tokenizers (see `MCTP-Bench/results/token_comparison.md`).
 
 MockRunner rows in `episodes.jsonl` reproduce the same token and pull structure, confirming
 the harness independently of any model.
 
 ## Findings
-1. Equal task success. In all eight cells every isolated Agent B passed the heuristic checks
-   with zero misleading answers, including both `flat` baselines. Because the baseline also
-   passed, this study compares context cost at equal task success; it does not demonstrate a
-   correctness or reliability advantage for MCTP. Task success is judged by keyword-based
-   checks, not human review.
+1. Task success. The `flat` baseline passed all ten scenarios; the `mctp` condition passed nine
+   and failed one (`hidden_constraint`, finding 8). On the nine scenarios where both conditions
+   pass, the study compares context cost at equal task success and does not demonstrate a
+   correctness advantage for MCTP; the tenth is a case where MCTP loses. There were zero
+   misleading answers. Task success is judged by keyword-based checks, not human review.
 2. Token reduction is real but not universal, and it scales with the amount of prunable
-   context. MCTP reduced total tokens in four of five scenarios and was token-worse in one.
+   context. MCTP reduced total tokens in eight of ten scenarios and was token-worse in two.
    The effect tracks how much of the flat context is prunable (irrelevant files, dead-ends,
-   stale decisions): `payment_idempotency`, a ~2,300-token investigation full of ruled-out
-   suspects, saw −72.2% total; `auth_migration`, a ~290-token already-concise transcript with
-   little to prune, saw +49.8% total, where the packet's structural overhead plus two pulls
-   exceeded the baseline. Below roughly 1,000 tokens there is often little to prune, so MCTP's
-   overhead can dominate; the benefit appears in larger, noisier contexts. Token reduction
-   should not be treated as the headline.
+   stale decisions): the large, noisy investigations `outage_investigation` (~2,500 tokens) and
+   `payment_idempotency` (~2,300 tokens) saw −66.6% and −72.2% total; the already-concise
+   `auth_migration` (~290 tokens) saw +49.8%, where the packet's structural overhead plus two
+   pulls exceeded the baseline, and `flaky_test` (~390 tokens) saw +3.9%. Below roughly 1,000
+   tokens there is often little to prune, so MCTP's overhead can dominate; the benefit appears
+   in larger, noisier contexts. Token reduction should not be treated as the headline.
 3. Receiver over-retrieval erodes the total-token advantage. In `cache_staleness` and
    `auth_migration` the mctp agent produced a correct answer from references before retrieving,
    then made confirmatory pulls that were not strictly necessary. This is a receiver-side
@@ -109,6 +132,15 @@ the harness independently of any model.
 7. Artifact references resolve the earlier representation gap. Replacing prose-summary
    artifacts with references (`{path, hash, symbols}`) plus retrieve-on-demand converted a
    vague request for source into a precise, targeted retrieval.
+8. MCTP loses when extraction is incomplete. In `hidden_constraint` a critical constraint (all
+   deletions must use the soft-delete path) was present in the flat transcript but linked in the
+   graph to the compliance task rather than the bulk-delete task, so the selector's packet
+   omitted it. The flat agent answered correctly; the mctp agent recognized the deletion method
+   was unspecified and abstained. This confirms that extraction and linking fidelity, not the
+   selector, is the system's ceiling: state that is captured but not connected to the task is
+   invisible to transfer. It also exposes a scoring limitation — a keyword check can be fooled
+   by the mere presence of the `softDelete` symbol in the packet — so this cell is judged on
+   whether the receiver committed to the compliant path, which it did not.
 
 ## Data and artifact index
 - Episodes: `MCTP-Bench/results/episodes.jsonl`
