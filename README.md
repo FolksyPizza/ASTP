@@ -5,9 +5,11 @@ Instead of transferring an entire conversation history, MCTP represents the impo
 explicitly, transfers the high-value context, references deeper artifacts, and retrieves
 their details only when they are needed.
 
-MCTP is not primarily a compression system. Its objective is to preserve task correctness
-while reducing the amount of context that must be transferred, by moving structured state
-rather than raw transcripts.
+MCTP is not primarily a compression system; it separates persistent agent state from active
+model context. Its operating principle is *preserve everything, propagate selectively, retrieve
+precisely*: the complete state — decisions, constraints, artifacts, provenance, and superseded
+approaches — is stored and auditable, only the relevant current state is sent to the next agent,
+and the original evidence stays retrievable on demand.
 
 ## Overview
 
@@ -21,6 +23,31 @@ available on demand.
 Scope is deliberately limited. MCTP does not attempt to solve AI memory in general, does not
 replace retrieval, and does not guarantee optimal context selection. See
 [docs/DESIGN.md](docs/DESIGN.md) for the full list of non-goals.
+
+## Transcript vs. summary vs. MCTP
+
+Three ways to hand work from one agent to the next:
+
+- **Transcript** — sends everything: "here is all of it, you figure it out."
+- **Summary** — sends an interpretation: "another model decided what you should know."
+- **MCTP** — preserves everything, sends the relevant current state, and keeps the underlying
+  evidence retrievable on demand.
+
+| | Transcript | Summary | MCTP |
+|---|---|---|---|
+| What the receiver gets | The full history | An LLM's condensed interpretation | Selected current-state nodes + artifact references |
+| Extra inference to prepare it | None | A summarization call (its cost must be counted) | None — deterministic selection |
+| Stale / superseded content | Included as-is | May keep or drop it, unpredictably | Excluded from the packet; retained in state and marked superseded |
+| Provenance & exact source | Present but unstructured | Usually lost | Explicit and structured (source, agent, supersession) |
+| Underlying information after handoff | Still in the transcript | Lost if the summary dropped it | Preserved and retrievable (`RETRIEVE <id>`) |
+| Risk of omitting a critical fact | Low — it sends everything | Real — the model may drop it | Real only if the fact is not linked to the task (extraction fidelity is the ceiling) |
+| Cost as history accumulates | Grows with the whole history | Re-summarize repeatedly | Active context stays small; state is stored separately |
+| Structured / auditable | No | No | Yes |
+| Built for agent-to-agent handoff | No | No | Yes |
+
+The evaluation treats transcript, summary (counting the summarizer's inference), conventional
+retrieval (RAG), and MCTP as separate baselines; see the
+[benchmark design](https://github.com/FolksyPizza/MCTP-Bench/blob/main/docs/BENCHMARK.md).
 
 ## Architecture
 
@@ -95,7 +122,8 @@ methodology, per-run data, and interpretation are in [docs/EXPERIMENTS.md](docs/
 ## Limitations
 
 - A small number of hand-authored scenarios; results are not yet statistically meaningful.
-- All model runs use Claude; there is no cross-model-family evidence.
+- All model runs so far use Claude; there is no cross-model-family evidence yet. A local
+  open-model sweep (vLLM, via the MCTP-Bench `--model` runner) is set up and is the next run.
 - Human validation of scoring has not been performed; correctness is judged by keyword-based
   checks.
 - Token counts use tiktoken (OpenAI encodings); open-model tokenizers (Qwen, Llama, and
