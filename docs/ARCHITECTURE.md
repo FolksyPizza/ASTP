@@ -100,8 +100,17 @@ deterministic Core baseline; it uses no trained model. Its policy:
 
 Because expansion is over the believed subgraph, superseded and contradicted nodes are never
 selected, and nodes belonging to unrelated tasks (which are not connected to the target task)
-are not reached. The Intelligence Layer, when present, replaces the ranking in this step; the
-interface — `select(graph, task, budget) -> [Node]` — stays fixed.
+are not reached.
+
+When the Intelligence Layer is enabled, selection becomes **semi-deterministic**: the
+deterministic walk above produces a generous candidate set (favoring recall), and a trained
+reranker scores and prunes it for the specific task and receiver — predicting sufficiency and
+choosing what to inline versus reference. The learned model can only select from the candidate
+set; it never invents content, so the packet stays extractive and auditable, and its
+contribution is measurable as the delta over the deterministic baseline. The interface,
+`select(graph, task, budget) -> [Node]`, is unchanged either way. The reranker is trained on the
+episode labels the benchmark produces: nodes the receiver later pulled that were absent from the
+packet are recall signal, and packet nodes it never used are precision signal.
 
 Retrieval and handoff are the same operation with different seeds: retrieving "the auth code"
 and handing off "continue the auth task" both reduce to selecting a bounded subgraph.

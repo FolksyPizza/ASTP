@@ -75,7 +75,8 @@ protocol. See [docs/DESIGN.md](docs/DESIGN.md).
 
 ```
 core/mctp/      Core reference implementation (event-sourced store, selector, transfer)
-docs/           DESIGN.md (rationale), ARCHITECTURE.md (mechanics), schema-v0.1.md, EXPERIMENTS.md
+docs/           PRIMER.md (start here), DESIGN.md (rationale), ARCHITECTURE.md (mechanics),
+                schema-v0.1.md, EXPERIMENTS.md, RESEARCH-LOG.md
 bench/          local viability probe and handoff example
 intelligence/   optional Intelligence Layer (design notes)
 ```
