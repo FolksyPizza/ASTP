@@ -101,3 +101,25 @@ sweep, so vLLM's continuous batching (target hours) is required for scale; (b) g
 control** — confirming that keyword scoring over-credits and motivating judge-based scoring
 before large runs.
 Decision: install vLLM (unprivileged venv) for the sweeps, and upgrade scoring before scaling.
+
+### 2026-08-21 — Reasoning models are in scope; runner handling
+Decision: reasoning ("thinking") models are a first-class part of the benchmark, not excluded —
+they are a major and growing class of agents.
+Finding: via Ollama, `qwen3.6` returns the final answer in the OpenAI `content` field and the
+chain-of-thought in a separate `reasoning` field. A too-small `max_tokens` is consumed by
+thinking and the answer is never emitted (empty content). Reasoning also multiplies output
+tokens (~1,100+ for a trivial question; thousands for a handoff), which raises time and cost
+roughly 3–10× over a non-reasoning model of similar size.
+Changes: the runner now extracts the answer robustly (strip `<think>...</think>`, fall back to
+the `reasoning` field), and exposes `--max-tokens` / `MCTP_MAX_TOKENS` (default 2048; use 4096+
+for heavy reasoners). Open item: record output/thinking tokens per episode so total-cost metrics
+count reasoning cost — reasoning models are exactly where structured state may change the
+cost/benefit, so this must be measured, not assumed.
+
+### 2026-08-21 — vLLM vs Ollama throughput (expectation)
+Note: Ollama serves single-stream, so its aggregate throughput equals its per-request rate
+(~39 gen tok/s for gemma3:27b here). vLLM's per-request speed is comparable, but its continuous
+batching runs many requests at once, so aggregate throughput for a sweep is far higher
+(order 10–30× at short context, less at long context where KV cache limits the batch). Per
+request ≈ same; whole-sweep ≈ much faster — the reason vLLM is required for scale. To be
+confirmed by measuring a batched vLLM run.
