@@ -88,3 +88,16 @@ Finding: the GPU server is a WSL VM; the GPU comes from the Windows host driver 
 models (`qwen3.6:35b-128k`, `gemma3:27b`, `gpt-oss:20b`, phi models).
 Decision: start local runs on Ollama's OpenAI-compatible endpoint; move heavy sweeps to vLLM in
 an unprivileged venv for throughput. Install via venv (no sudo).
+
+### 2026-08-21 — Local-model calibration (Ollama, gemma3:27b)
+Finding: the runner drove gemma3:27b end to end through all ten scenarios (20 cells) via Ollama
+in 2m16s (~6.8 s/cell). Warm single-stream throughput was ~39 generation tok/s and ~4,700
+prefill tok/s on the two 3090s. Ollama serves single-stream (no batching) and reloads the model
+on a switch. `qwen3.6:35b` is a reasoning model that returned empty content within a normal
+token budget (its output went to thinking tokens); `gpt-oss:20b` returned HTTP 500.
+Implications: (a) single-stream Ollama extrapolates to roughly days for a Phase-1 large-scale
+sweep, so vLLM's continuous batching (target hours) is required for scale; (b) gemma3:27b scored
+100% on the keyword checks, including a **false pass on the `hidden_constraint` negative
+control** — confirming that keyword scoring over-credits and motivating judge-based scoring
+before large runs.
+Decision: install vLLM (unprivileged venv) for the sweeps, and upgrade scoring before scaling.
