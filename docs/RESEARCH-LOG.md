@@ -116,6 +116,23 @@ for heavy reasoners). Open item: record output/thinking tokens per episode so to
 count reasoning cost — reasoning models are exactly where structured state may change the
 cost/benefit, so this must be measured, not assumed.
 
+### 2026-08-22 — Judge topology, low-context adapters, and the extractor
+Decision (judge topology): the independent panel is the PRIMARY, reported label — each of ≥3
+mixed-family judges is reduced to one verdict (median score, majority pass) and the panel
+aggregates by majority/median; this is the metric validated against a human sample. Cross-review
+is kept as a SECONDARY signal (does peer critique flip the panel, and how far do scores shift),
+because showing judges each other's verdicts introduces anchoring. Cross-review is optional.
+Built (MCTP-Bench): MBPP and GSM8K adapters with objective scorers (unit tests / final-number
+match), completing the low-context suite; and the extractor (`extraction/`) — a deterministic
+`HeuristicExtractor` (files→artifact nodes with parsed symbols + import-derived `depends_on`
+edges, task linked to named files) and an `LLMExtractor` skeleton (a model emits the closed v0.1
+node/edge vocabulary including superseded decisions, validated on build). Verified offline: the
+heuristic extractor's packet includes a task's dependencies and excludes an unrelated file, and
+the LLM builder drops off-vocabulary types/edges and applies supersession.
+Finding: with the low-context adapters built, ~42.6k receiver runs are now runnable without the
+extractor (all of Phase 0 plus the in-house controls); the extractor gates the Phase-2 high-context
+suites. Still no model server contacted.
+
 ### 2026-08-22 — Deferred cross-review scoring, run plan, and reasoning-on-all
 Decision: store all receiver data first and score entirely afterward, with a richer judge than a
 single-vote ensemble. The deferred pass (`scoring/judge.py`) runs three stages — independent
