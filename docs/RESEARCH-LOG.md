@@ -116,6 +116,22 @@ for heavy reasoners). Open item: record output/thinking tokens per episode so to
 count reasoning cost — reasoning models are exactly where structured state may change the
 cost/benefit, so this must be measured, not assumed.
 
+### 2026-08-22 — Deferred cross-review scoring, run plan, and reasoning-on-all
+Decision: store all receiver data first and score entirely afterward, with a richer judge than a
+single-vote ensemble. The deferred pass (`scoring/judge.py`) runs three stages — independent
+scoring (≥3 mixed-family judges, 2 samples each at nonzero temperature), cross-review (each judge
+critiques the others' verdicts and revises), and aggregation (majority pass + median score, with
+inter-judge disagreement, sample instability, and the round-1→round-2 shift recorded). Every judge
+input/output is stored so the scoring is auditable and re-aggregatable.
+Decision: reasoning models are run on all scenarios (a reasoning model is included in every wave),
+not a subset, since reasoning agents are exactly where structured state may change the cost/benefit.
+Decision: run the whole program in two waves — first all suites on small models (8–14B), then again
+on large models (27–35B). The small wave is a result in itself and de-risks the pipeline at scale.
+Finding: the plan (`bench_plan.py`) totals ~157k receiver runs across the full program (~6.6k
+runnable now with the built adapters), plus deferred judging of ~0.5M calls over open-ended outputs
+(objective suites are scored programmatically and judged only as a validation sample). All of this
+is code and configuration; no model server has been contacted and no run performed.
+
 ### 2026-08-22 — Large-scale benchmark framework built (no runs yet)
 Decision: implement the full data-capture framework before the first recorded run, so every run
 preserves raw and parsed data additively.
