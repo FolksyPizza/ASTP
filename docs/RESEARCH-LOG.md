@@ -116,6 +116,24 @@ for heavy reasoners). Open item: record output/thinking tokens per episode so to
 count reasoning cost — reasoning models are exactly where structured state may change the
 cost/benefit, so this must be measured, not assumed.
 
+### 2026-08-22 — All suites wired: high-context adapters and the multi-handoff tier
+Decision: judging topology is swappable at will — scoring is a post-hoc pass over stored outputs
+and never modifies model data — so the panel/cross-review split can change later without re-running.
+Built (MCTP-Bench): the remaining adapters, so every planned suite is wired. `swebench`
+(issue→patch, repo materialized to MCTP state via the extractor; objective scoring deferred to the
+SWE-bench harness), `repobench` (cross-file next-line completion, line-match scorer), and
+`longbench` (long-document QA, any-answer match or judge). The subagent/swarm tier is implemented
+as a multi-handoff pipeline (`mctpbench/pipeline.py` + the `swarm` adapter): stages share evolving
+state, each recorded as its own run. Also fixed a real gap — the matrix runner now passes each
+adapter's receiver instruction to the model (previously every suite got the handoff prompt), so
+code suites are asked to complete code rather than to write a handoff.
+Finding (offline, MockRunner): all eight suites build and record; the swarm pipeline shows the
+intended signal — per-stage context under `transcript` grew 43→91→187 tokens (re-sending the
+whole history) while under `mctp` it stayed 32→62→93 (a selected packet). With a streaming mock, a
+real code answer passes the HumanEval unit tests through the objective scorer. ~135.5k of the
+~157k receiver runs are now runnable without further code (only a curated medium multi-file set is
+left unbuilt). No model server contacted.
+
 ### 2026-08-22 — Judge topology, low-context adapters, and the extractor
 Decision (judge topology): the independent panel is the PRIMARY, reported label — each of ≥3
 mixed-family judges is reduced to one verdict (median score, majority pass) and the panel
