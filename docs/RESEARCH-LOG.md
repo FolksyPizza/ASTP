@@ -116,6 +116,26 @@ for heavy reasoners). Open item: record output/thinking tokens per episode so to
 count reasoning cost — reasoning models are exactly where structured state may change the
 cost/benefit, so this must be measured, not assumed.
 
+### 2026-08-22 — Large-scale benchmark framework built (no runs yet)
+Decision: implement the full data-capture framework before the first recorded run, so every run
+preserves raw and parsed data additively.
+Built (MCTP-Bench): a streaming runner (`mctpbench/streaming.py`) that captures the verbatim
+request(s), every streamed chunk with its wall-clock offset, the server `usage` (native token
+counts), and assembled answer/reasoning; a run-record schema and storage tree
+(`mctpbench/records.py`, writing `runs/ raw/ outputs/ judge/ aggregates/ configs/`); the four
+condition builders (`conditions/`: transcript, same-model summary, dependency-free TF-IDF rag,
+Core mctp packet); suite adapters (`adapters/`: `humaneval` with an objective unit-test scorer,
+`inhouse` wrapping the ten controls); objective scorers and an ensemble judge pass (`scoring/`);
+the matrix runner (`run_benchmark.py`) with a `--dry-run` mode; pricing/aggregation (`analyze.py`);
+and host-setup scripts.
+Finding: validated end to end offline with the deterministic MockRunner and a mocked SSE stream —
+all four conditions build, the storage tree writes, native + reference token counts and the raw
+capture are recorded, the HumanEval scorer passes the canonical solution and fails a wrong one, and
+`analyze.py` produces priced aggregates. No model server was contacted; no benchmark has been run.
+Note: for stateless suites (HumanEval) the conditions coincide, so Phase-0 is a pipeline/scoring
+validation, not a transfer comparison; the transfer comparison lives in the in-house controls and
+the high-context suites that await the extractor.
+
 ### 2026-08-21 — vLLM vs Ollama throughput (expectation)
 Note: Ollama serves single-stream, so its aggregate throughput equals its per-request rate
 (~39 gen tok/s for gemma3:27b here). vLLM's per-request speed is comparable, but its continuous
