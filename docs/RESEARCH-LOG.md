@@ -116,6 +116,12 @@ for heavy reasoners). Open item: record output/thinking tokens per episode so to
 count reasoning cost — reasoning models are exactly where structured state may change the
 cost/benefit, so this must be measured, not assumed.
 
+### 2026-08-23 — Graceful pause/stop
+Built: `StopController` (in `mctpbench/orchestrate.py`) for a clean pause — Ctrl-C/SIGTERM, or a
+`results/progress/<suite>.stop` file created from another terminal, requests a stop that finishes
+the current run, saves, and stops (a second Ctrl-C aborts). The stop-file is cleared once honored
+so `--resume` continues. Verified offline: stop-file honored, cleared, and resume completes.
+
 ### 2026-08-23 — Sweep orchestration, open-model tokenizers, and repo-suite data prep
 Built (MCTP-Bench):
 - Orchestration (`mctpbench/orchestrate.py` + `run_benchmark` flags): checkpoint/resume via an
