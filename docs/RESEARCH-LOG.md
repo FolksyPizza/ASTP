@@ -116,6 +116,17 @@ for heavy reasoners). Open item: record output/thinking tokens per episode so to
 count reasoning cost — reasoning models are exactly where structured state may change the
 cost/benefit, so this must be measured, not assumed.
 
+### 2026-08-23 — Full matrix code-ready; dataset preparation scripted
+Built: the medium multi-file adapter (`multifile`), the last unbuilt suite — small project
+snapshots with a bug/reasoning task, scored by line- or substring-match, mctp state via the
+extractor. Every planned suite now has an adapter, so all ~157k receiver runs are code-ready
+(the plan's ready count equals the full-program total). Also added `scripts/prepare_datasets.py`
+(converts MBPP, GSM8K, LongBench, and SWE-bench metadata into the adapter JSONL schemas via the
+datasets library) and wired it into `fetch_datasets.sh`; `setup_host.sh` now installs `datasets`.
+Open data-prep (not code): SWE-bench `files` snapshots require a checkout of repo@base_commit
+per instance, and RepoBench needs a dataset-specific assembler — until those, those two suites
+run only on bundled samples. No model server contacted.
+
 ### 2026-08-22 — All suites wired: high-context adapters and the multi-handoff tier
 Decision: judging topology is swappable at will — scoring is a post-hoc pass over stored outputs
 and never modifies model data — so the panel/cross-review split can change later without re-running.
