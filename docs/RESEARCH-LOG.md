@@ -116,6 +116,20 @@ for heavy reasoners). Open item: record output/thinking tokens per episode so to
 count reasoning cost — reasoning models are exactly where structured state may change the
 cost/benefit, so this must be measured, not assumed.
 
+### 2026-08-23 — Sweep orchestration, open-model tokenizers, and repo-suite data prep
+Built (MCTP-Bench):
+- Orchestration (`mctpbench/orchestrate.py` + `run_benchmark` flags): checkpoint/resume via an
+  append-only manifest (interrupt/crash/`--max-hours` loses at most the in-flight run; `--resume`
+  continues), a `--window HH:MM-HH:MM` clock gate (wraps midnight, e.g. off-hours only), a
+  `--max-hours` budget, and progress with a rolling rate and ETA. Verified offline.
+- Open-model tokenizers as reference counts: `tokenizers.reference_set()` now adds HF tokenizers
+  (Qwen, Llama by default; `MCTP_HF_TOKENIZERS` / `MCTP_REF_TOKENIZERS` configurable) to the
+  tiktoken encodings, so amounts are comparable across the families actually run, not only OpenAI's.
+- Repo-suite data prep: `prepare_datasets.py` now materializes SWE-bench `files` per instance by
+  checking out repo@base_commit and reading the patch-touched files, and maps RepoBench to our
+  schema; both wired into `fetch_datasets.sh`. The patch file-path parser is verified offline.
+No model server contacted.
+
 ### 2026-08-23 — Full matrix code-ready; dataset preparation scripted
 Built: the medium multi-file adapter (`multifile`), the last unbuilt suite — small project
 snapshots with a bug/reasoning task, scored by line- or substring-match, mctp state via the
