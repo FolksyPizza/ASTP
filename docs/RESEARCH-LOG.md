@@ -116,6 +116,19 @@ for heavy reasoners). Open item: record output/thinking tokens per episode so to
 count reasoning cost — reasoning models are exactly where structured state may change the
 cost/benefit, so this must be measured, not assumed.
 
+### 2026-08-23 — Model unloading, wave script, and a cross-category smoke test
+Built (MCTP-Bench):
+- Model lifecycle / unload-when-idle: `--window` now takes `--on-pause` / `--on-resume` shell
+  hooks (WindowGate runs them when the window closes/opens), and `scripts/serve_vllm.sh` /
+  `stop_vllm.sh` start/stop a vLLM server to free the GPU. `scripts/run_wave.sh` runs a wave that
+  starts vLLM per model, runs the suites, and stops it before the next model — only the model in
+  use holds the GPU. (Ollama unloads on its own keep-alive; vLLM is server-lifetime, hence this.)
+- `scripts/smoke.sh ... all`: a cross-category smoke test — one task from every suite (all
+  conditions), exercising each adapter, the extractor, and the swarm pipeline. Verified offline:
+  all nine categories run one task each with zero errors.
+Rationale: each vLLM process serves one model for its lifetime, so unloading is a process-lifecycle
+concern the harness now manages rather than assuming models stay resident.
+
 ### 2026-08-23 — Per-model endpoints, telemetry socket + monitor, smoke run
 Clarification: the runner varies context (the four conditions build different contexts from one
 Source) and iterates models, but each vLLM process serves one model — so model switching is a
