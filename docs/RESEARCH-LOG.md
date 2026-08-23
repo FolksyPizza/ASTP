@@ -116,6 +116,21 @@ for heavy reasoners). Open item: record output/thinking tokens per episode so to
 count reasoning cost — reasoning models are exactly where structured state may change the
 cost/benefit, so this must be measured, not assumed.
 
+### 2026-08-23 — Per-model endpoints, telemetry socket + monitor, smoke run
+Clarification: the runner varies context (the four conditions build different contexts from one
+Source) and iterates models, but each vLLM process serves one model — so model switching is a
+server concern, not something the runner "loads".
+Built (MCTP-Bench):
+- Per-model endpoints: `--models` accepts `model@url`, so a sweep can fan out across several vLLM
+  servers (e.g. a small model per GPU) instead of assuming one endpoint serves all models.
+- Live telemetry (`mctpbench/telemetry.py`): the runner serves a status snapshot on a localhost
+  socket; `monitor.py` connects and renders a dashboard (progress bar, rate, ETA, pass/fail/error
+  tallies, current run), watchable over an SSH tunnel. Best-effort — a bind failure or a dropped
+  monitor never affects the sweep. Verified offline via a server↔client round-trip.
+- `scripts/smoke.sh`: a fast first run (one small model, low-context suites, a few tasks each,
+  transcript+mctp) to validate the end-to-end path before a full wave.
+No model server contacted.
+
 ### 2026-08-23 — Graceful pause/stop
 Built: `StopController` (in `mctpbench/orchestrate.py`) for a clean pause — Ctrl-C/SIGTERM, or a
 `results/progress/<suite>.stop` file created from another terminal, requests a stop that finishes
