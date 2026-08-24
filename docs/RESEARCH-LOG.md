@@ -116,6 +116,22 @@ for heavy reasoners). Open item: record output/thinking tokens per episode so to
 count reasoning cost — reasoning models are exactly where structured state may change the
 cost/benefit, so this must be measured, not assumed.
 
+### 2026-08-23 — First real end-to-end runs on the GPU host (smoke test passed)
+Finding: the full harness ran end to end against a real model on the GPU host. Setup: rsynced both
+repos to the host, built a venv (tiktoken + datasets), fetched HumanEval/MBPP/GSM8K. Ran a
+cross-category smoke test (one task from every suite) with `qwen2.5-coder:7b` — 40 runs recorded,
+40 raw captures, 120 output files, aggregates + pricing generated. All nine categories executed;
+objective scoring worked (unit tests, line-match, code-exec); the swarm multi-handoff recorded per
+stage and mctp kept a smaller per-stage context (32→124→155 vs transcript 43→201→254); records
+carry native token counts, tiktoken + the Qwen HF tokenizer, raw capture, and timing.
+Blocker (throughput sweep): vLLM 0.27.1's V1 engine requires UVA (`UvaBuffer`), which the WSL2 GPU
+passthrough does not provide — `RuntimeError: UVA is not available`; V0 is removed in this version.
+So vLLM does not run on this WSL host as-is. The smoke test therefore ran on Ollama (WSL-native,
+OpenAI-compatible on :11434), which serves single-stream. Options for the batched sweep, to
+decide: (a) downgrade vLLM to a WSL-compatible release, (b) run vLLM in a native-Linux/container
+environment, or (c) use Ollama with its parallel-request setting and accept lower aggregate
+throughput. Ollama single-stream throughput was ~1–2 s/run warm on the smoke suites.
+
 ### 2026-08-23 — Model unloading, wave script, and a cross-category smoke test
 Built (MCTP-Bench):
 - Model lifecycle / unload-when-idle: `--window` now takes `--on-pause` / `--on-resume` shell
