@@ -116,6 +116,22 @@ for heavy reasoners). Open item: record output/thinking tokens per episode so to
 count reasoning cost — reasoning models are exactly where structured state may change the
 cost/benefit, so this must be measured, not assumed.
 
+### 2026-08-24 — All benchmarks ready on the host; swarm arrangements; full dry run passed
+Milestone: every suite is prepared on the GPU host and passes a dry run. Datasets on host —
+HumanEval 164, MBPP 500, GSM8K 1319, multifile 300 (synthetic), inhouse 10, LongBench 294,
+RepoBench 500, SWE-bench 500 (459 with file snapshots from repo checkouts; ~2GB cache), swarm 40
+(synthetic). A 1–2-task dry run of all nine suites under all four conditions ran with zero errors.
+Design changes:
+- Every context type (low/med/high) now runs all four conditions (transcript/summary/rag/mctp);
+  low-context suites were transcript+mctp only.
+- Swarm agent arrangements: a pipeline can run same-family (one model family across roles) or
+  cross-family (different families per role), where accumulated inter-agent state matters most.
+  `build_arrangements` derives them from the model list (7 across the two waves); `run_pipeline`
+  assigns a model per stage. This is the "different arrangements + same/different family" dimension.
+- Full program is now ~299k receiver runs (4 conditions everywhere + swarm arrangements).
+Fixes: RepoBench's cross-file `context` field is a list, not a string — coerced in prep and guarded
+in the extractor. SWE-bench `files` are the patch-touched files read at base_commit.
+
 ### 2026-08-24 — Runner concurrency, synthetic-suite expansion, model policy, transparency
 Built (MCTP-Bench):
 - Runner concurrency: `--concurrency N` runs N jobs in flight via a thread pool so vLLM batches
