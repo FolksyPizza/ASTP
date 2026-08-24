@@ -116,6 +116,29 @@ for heavy reasoners). Open item: record output/thinking tokens per episode so to
 count reasoning cost — reasoning models are exactly where structured state may change the
 cost/benefit, so this must be measured, not assumed.
 
+### 2026-08-24 — Pre-run refinements: context overflow, retrieve-on-demand, LongBench mctp
+Finding (context overflow, measured): with an 8192 window, 60% of high-context transcript prompts
+overflow — LongBench 176/294 (max 62,983 tokens), SWE-bench 279/459 (max 138,617). Left unhandled
+these crash vLLM.
+Fix: `tokenizers.truncate_to_tokens` (head+tail) + `--max-context-tokens`; `execute_run` trims the
+context to the window and records `context_truncated` / `context_tokens_original`. Verified on the
+host: overflowing transcripts (10.9k/11.8k/8.0k) were trimmed to ~6k and flagged, small mctp
+packets passed through untouched — the truncation asymmetry is itself a recorded result.
+Extractor assessment (answering "is the extractor good?"): mechanically sound for code repos
+(files→artifact nodes + import edges), with two scope facts — (a) SWE-bench `files` are only the
+patch-touched files (~2), so there is little irrelevant context for mctp to filter (it tests the
+reference/retrieval layer, not selection); (b) OSS issues carry no decisions/supersession, so the
+state-transfer story lives in the in-house + swarm suites, not the OSS repo suites. Two real bugs
+found and fixed:
+- LongBench mctp was degenerate: the packet held only the question, not the document, so it could
+  never answer. Now the document is an artifact node (via source_from_repo), so mctp references it
+  and retrieves on demand.
+- Retrieve-on-demand never fired on OSS suites: their receiver instructions don't mention the
+  RETRIEVE mechanism (only the in-house DEFAULT_QUESTION does). `execute_run` now appends the
+  available reference ids and the RETRIEVE instruction whenever the packet has references. Verified:
+  LongBench mctp now pulls the document (ret_tok≈1441). (On prose, retrieving the whole document
+  makes mctp≈transcript — an honest result, not a defect.)
+
 ### 2026-08-24 — All benchmarks ready on the host; swarm arrangements; full dry run passed
 Milestone: every suite is prepared on the GPU host and passes a dry run. Datasets on host —
 HumanEval 164, MBPP 500, GSM8K 1319, multifile 300 (synthetic), inhouse 10, LongBench 294,
