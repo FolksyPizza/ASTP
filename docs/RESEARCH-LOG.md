@@ -116,6 +116,28 @@ for heavy reasoners). Open item: record output/thinking tokens per episode so to
 count reasoning cost — reasoning models are exactly where structured state may change the
 cost/benefit, so this must be measured, not assumed.
 
+### 2026-08-24 — Core selector refined: distance- and budget-aware
+Decision: refine the Core cold-start selector before the run so the mctp condition represents the
+protocol well (with further refinement expected after seeing results). The selector now ranks
+candidates by (type priority, hop distance) — load-bearing state first, nearer nodes before
+farther — and, when a `budget_tokens` cap is set, keeps the task plus the closest, most
+load-bearing nodes and sheds distant peripheral ones (artifacts stay retrievable on demand). This
+makes the packet tunable to the receiver's window: a tight budget yields a focused packet.
+Wiring: the mctp condition passes `--max-context-tokens` as the selector budget, so mctp trims by
+relevance (drop least-relevant nodes) while the transcript baseline trims by naive head+tail — the
+honest asymmetry. Verified: at a 120-token budget on bug43 the packet kept the task and the two
+load-bearing decisions and dropped artifacts/entities.
+Overflow decision (how to handle transcript over-window): serve high-context suites with a
+realistic window (target 32k on the large-model wave) and trim to it; transcript truncates
+head+tail (realistic information loss, recorded via `context_truncated`), mctp trims intelligently
+via the selector budget and rarely hits it. Truncation rate becomes a reported metric — the point
+being that the raw transcript loses information at the window while the compact packet does not.
+Scoring decision: SWE-bench uses BOTH its native test-verified scoring AND the judge ensemble; the
+judge is shown the native pass/fail as context. Native scoring runs as a post-hoc pass (harness +
+containers), like the judge pass.
+Large-model serving: the large wave uses AWQ-quantized 27–35B models, 1–2 loaded at a time, to keep
+both throughput and context window workable on 2x24GB.
+
 ### 2026-08-24 — Pre-run refinements: context overflow, retrieve-on-demand, LongBench mctp
 Finding (context overflow, measured): with an 8192 window, 60% of high-context transcript prompts
 overflow — LongBench 176/294 (max 62,983 tokens), SWE-bench 279/459 (max 138,617). Left unhandled

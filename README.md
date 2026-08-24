@@ -133,6 +133,26 @@ methodology, per-run data, and interpretation are in [docs/EXPERIMENTS.md](docs/
 - MCTP graphs in the scenarios are authored, not produced by an extractor, so extraction
   fidelity is not yet measured.
 
+## Roadmap
+
+Approximate targets for a research prototype, not commitments; dates may move as results come in.
+
+- **Now (Aug 2026)** — Core reference implementation and the MCTP-Bench harness are complete. Nine
+  evaluation suites (code, math, repository, long-context, and multi-agent) are prepared, and the
+  large-scale runner — concurrent, checkpointed/resumable, ~300k receiver runs across a nine-model
+  sweep — is validated end to end on local open models. The benchmark is ready to run.
+- **Late Aug – Sep 2026** — throughput calibration, then the first full evaluation: the small-model
+  wave (8–14B) across all suites with deferred cross-review judge scoring, and the first public
+  results.
+- **Sep – Oct 2026** — the large-model wave (quantized 27–35B), SWE-bench native test-verified
+  scoring, and a results leaderboard others can track.
+- **Q4 2026** — Intelligence Layer v0.1: the learned selector/reranker, trained on the accumulated
+  episodes (synthetic data — see [docs/MODEL-CARD.md](docs/MODEL-CARD.md)), reported against the
+  deterministic Core baseline.
+- **Beyond** — adaptive context feeding, multi-agent swarm evaluation at scale, and schema v0.2.
+
+See [docs/ROADMAP.md](docs/ROADMAP.md) for the detailed phase plan.
+
 ## Status
 
 Research prototype under active development. Interfaces and schema are versioned at v0.1 and
