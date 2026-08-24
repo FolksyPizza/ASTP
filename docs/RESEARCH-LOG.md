@@ -116,6 +116,27 @@ for heavy reasoners). Open item: record output/thinking tokens per episode so to
 count reasoning cost — reasoning models are exactly where structured state may change the
 cost/benefit, so this must be measured, not assumed.
 
+### 2026-08-24 — Runner concurrency, synthetic-suite expansion, model policy, transparency
+Built (MCTP-Bench):
+- Runner concurrency: `--concurrency N` runs N jobs in flight via a thread pool so vLLM batches
+  them; shared collectors (result-store shards, manifest, progress, tallies) are locked, and the
+  graceful stop/window/resume logic drains in-flight runs cleanly. Added `--retries` (transient
+  errors) and `--stop-ollama` (free the GPU at startup). Measured on real vLLM: 24 HumanEval runs
+  took 81.8s at concurrency=1 vs 15.7s at concurrency=8 — a 5.2x speedup, confirming batching now
+  pays off. Record integrity verified (no duplicates/losses; resume clean).
+- Synthetic suites expanded: `scripts/generate_synthetic.py` generates `multifile` (300) and
+  `swarm` (40) from parametric templates with known ground truth; every task is marked
+  `"synthetic": true`. The swarm adapter now builds pipelines from the generated data.
+- Model matrix (`bench_plan.py`): a broader per-wave suite spanning families — small wave 5 models
+  (qwen2.5-coder 7B/14B, llama3.1 8B, gemma2 9B, qwen3 8B*), large wave 4 models (gemma3 27B,
+  qwen2.5 32B, qwen2.5-coder 32B, qwen3 32B*; 32B needs AWQ). Encoded the policy: single-agent
+  suites run on >= 2 distinct models (so any MCTP effect is cross-model, not a single-model
+  artifact); the multi-agent swarm is exempt. Full program is now ~239k receiver runs, all suites
+  ready.
+Transparency (MCTP): added `docs/MODEL-CARD.md` stating up front that the learned reranker (when
+trained) is trained on SYNTHETIC episodes (the in-house + generated suites, labeled synthetic),
+with OSS suites held out for evaluation only. Published before any model exists.
+
 ### 2026-08-23 — vLLM works on WSL (downgrade + patch); remaining datasets; a concurrency gap
 Finding: vLLM runs on the WSL2 host after downgrading to 0.9.2 in a dedicated venv and applying
 two fixes — force the V0 engine (`VLLM_USE_V1=0`, which avoids the UVA buffers WSL lacks), pin
