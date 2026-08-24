@@ -116,6 +116,22 @@ for heavy reasoners). Open item: record output/thinking tokens per episode so to
 count reasoning cost — reasoning models are exactly where structured state may change the
 cost/benefit, so this must be measured, not assumed.
 
+### 2026-08-23 — vLLM works on WSL (downgrade + patch); remaining datasets; a concurrency gap
+Finding: vLLM runs on the WSL2 host after downgrading to 0.9.2 in a dedicated venv and applying
+two fixes — force the V0 engine (`VLLM_USE_V1=0`, which avoids the UVA buffers WSL lacks), pin
+`transformers==4.52.4` (0.9.2 is incompatible with transformers 5.x), and guard vLLM's
+unconditional `aimv2` config registration (a known 0.9.2 clash with transformers>=4.52). It then
+served `qwen2.5-coder-7b` healthy and the harness ran through it (streaming + native token counts).
+Scripted as `scripts/setup_vllm_wsl.sh` for reproducibility. The initial `No available memory for
+cache blocks` was only GPU contention: Ollama auto-reloads a pinned 35B (8h keep-alive), so the GPU
+must be freed before a vLLM run — the two servers cannot coexist here.
+Datasets: HumanEval, MBPP, GSM8K, RepoBench (500), SWE-bench metadata (500), and LongBench (294,
+loaded from data.zip since datasets v5 dropped its script loader) are fetched. Still pending:
+SWE-bench `files` (per-instance repo checkouts).
+Gap for the scale sweep: `run_benchmark` issues requests sequentially, so vLLM's continuous
+batching gives no throughput gain over single-stream. Exploiting it needs a concurrency option (a
+pool issuing many requests at once). To build before the large sweep; not needed for smoke tests.
+
 ### 2026-08-23 — First real end-to-end runs on the GPU host (smoke test passed)
 Finding: the full harness ran end to end against a real model on the GPU host. Setup: rsynced both
 repos to the host, built a venv (tiktoken + datasets), fetched HumanEval/MBPP/GSM8K. Ran a
