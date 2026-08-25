@@ -11,7 +11,7 @@ Core baseline selector, and compares a structured MCTP packet against a naive fl
  to selection to structured transfer to audit); the packet excludes stale (superseded) and
 irrelevant state; the audit log is complete.
 
-**What it does NOT prove:** that Agent B succeeds on the smaller packet, that needs a
+**What it does not prove:** that Agent B succeeds on the smaller packet, that needs a
 model in the loop (MCTP-Bench, next). Token counts are a ~4 chars/token estimate. The flat
 baseline is deliberately conservative (node contents only, no transcript filler), so the
 reported reduction is a **floor**, not the realistic gap.

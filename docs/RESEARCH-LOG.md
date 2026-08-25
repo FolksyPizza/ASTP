@@ -111,23 +111,23 @@ roughly 3-10x over a non-reasoning model of similar size.
 Changes: the runner now extracts the answer robustly (strip `<think>...</think>`, fall back to
 the `reasoning` field), and exposes `--max-tokens` / `MCTP_MAX_TOKENS` (default 2048; use 4096+
 for heavy reasoners). Open item: record output/thinking tokens per episode so total-cost metrics
-count reasoning cost, reasoning models are exactly where structured state may change the
-cost/benefit, so this must be measured, not assumed.
+count reasoning cost. Reasoning models are exactly where structured state may change the
+cost/benefit, so this must be measured rather than assumed.
 
-### 2026-08-25, On-box model capability gate
+### 2026-08-25, Candidate model capability gate
 Gated a set of candidate 20-35B models (12 HumanEval + 12 GSM8K, transcript, threshold 40%):
-- Qwen3 27B: HumanEval 12/12, GSM8K 12/12, overall 100%, PASS (standout).
+- Qwen3 27B: HumanEval 12/12, GSM8K 12/12, overall 100%, PASS (strongest of the set).
 - Gemma 3 27B: HumanEval 12/12, GSM8K 10/12, overall 92%, PASS (different family).
 - Qwen3 35B: HumanEval 6/12, GSM8K 12/12, overall 75%, PASS but weaker on code than the 27B
- (bigger is not automatically better, empirical gating is what matters).
-- GPT-OSS 20B: all runs errored server-side, unusable in this environment, excluded.
+ (bigger is not automatically better; empirical gating is what matters).
+- GPT-OSS 20B: all runs errored server-side; unusable in this environment, and excluded.
 Results-tier candidates: Qwen3 27B + Gemma 3 27B (both >90%, two families); Qwen3 35B available as a
 third. For cross-family breadth a Qwen2.5-Coder-32B and a further-family model should be gated next.
 Operational: run detached work in a persistent session (`screen`/`tmux`) rather than an SSH-attached
 process, so a dropped connection cannot interrupt a long job.
 
 ### 2026-08-24, Model tiers and swarm one-at-a-time timing
-Decision (tiers): the 14B tier is for fast, large-scale telemetry/dev runs only, NOT final
+Decision (tiers): the 14B tier is for fast, large-scale telemetry and development runs only, not final
 results. Final results use capability-gated 20-35B models. Candidate results-tier models to gate:
 Qwen2.5-32B-Instruct and Qwen2.5-Coder-32B (AWQ), Qwen3-32B and QwQ-32B (reasoning), Gemma 3 27B,
 Mistral-Small-3-24B, and DeepSeek-R1-Distill-Qwen-32B. Each must clear scripts/capability_probe.sh
@@ -149,7 +149,7 @@ OSS models chosen because they clear the gate empirically, not because they are 
 at a lower 32K window (faster, fits, covers most tasks; the rare longer task is trimmed and recorded).
 Large 32B models use AWQ, run single-agent suites only, 1-2 loaded at a time.
 Finding (14B validates the floor): Qwen2.5-14B-Instruct at 64K solved HumanEval 4/5 under BOTH
-transcript and mctp (the one miss failed both conditions), a real signal, and mctp preserved
+transcript and mctp (the one miss failed both conditions), a meaningful result, and mctp preserved
 correctness at equal task success. The prior 7B scored ~0, which is why conditions were
 indistinguishable.
 Refinement (hybrid inline delivery): the mctp builder now inlines artifact content that FITS the
@@ -163,7 +163,7 @@ judge scoring to read properly.)
 Correction (SWE-bench, important): the earlier 7B "36x token win" on SWE-bench was an artifact, 
 the weak model patched blind from file references without reading them (pulls=0), likely producing
 wrong patches. With the 14B + inline delivery, mctp inlines the files it needs (avg 46,262 tok) and
-is essentially equal to transcript (53,726 tok), not far smaller. This is the honest result: SWE-bench's
+is essentially equal to transcript (53,726 tok), not far smaller. This is the accurate result: SWE-bench's
 snapshot is only the patch-touched files (all relevant), so MCTP has nothing to prune and correctly
 degrades to ~transcript. MCTP's token advantage requires PRUNABLE context, which lives in the
 in-house/multifile controls (deliberate noise) and would appear on SWE-bench only if the snapshot
@@ -171,7 +171,7 @@ included sibling/irrelevant repo files. Implication: to test MCTP selection on S
 per-instance snapshot with additional repo files; otherwise report SWE-bench as an artifact/retrieval
 and correctness test, not a selection test.
 
-### 2026-08-24, 128K high-context validation (plumbing check, not a finding)
+### 2026-08-24, 128K high-context validation (infrastructure validation, not a finding)
 Setup: served Qwen2.5-7B-Instruct at max_model_len 131072 (YaRN factor 4) on 2x RTX 3090 (TP=2,
 ~23GB/card); ran 6 large tasks (LongBench 46-63K tokens, SWE-bench 51-56K) under transcript vs mctp
 at a 120K window, concurrency 1-2.
@@ -182,7 +182,7 @@ Results (n=6, one model, one trial, 2 of 4 conditions):
  effective token win and it is slightly SLOWER (35.3s vs 28.3s, extra round). Both scored 0/4.
 Reading: this validates (a) a small model serves a genuine 128K window here, (b) the harness
 streams/records correctly at scale with zero truncation, and (c) the reference/retrieval layer is a
-large win for code. It is NOT a performance finding: correctness is unestablished (SWE-bench not
+large win for code. It is not a performance finding: correctness is unestablished (SWE-bench not
 test-verified; LongBench 0/4 both ways), the sample is tiny, and prose is a wash-to-loss. Token
 reduction without proven correctness is the regression the benchmark design explicitly warns
 against, so these numbers stay in the log, not the README, until the full evaluation establishes
@@ -199,14 +199,14 @@ load-bearing nodes and sheds distant peripheral ones (artifacts stay retrievable
 makes the packet tunable to the receiver's window: a tight budget yields a focused packet.
 Wiring: the mctp condition passes `--max-context-tokens` as the selector budget, so mctp trims by
 relevance (drop least-relevant nodes) while the transcript baseline trims by naive head+tail, the
-honest asymmetry. Verified: at a 120-token budget on bug43 the packet kept the task and the two
+intended asymmetry. Verified: at a 120-token budget on bug43 the packet kept the task and the two
 load-bearing decisions and dropped artifacts/entities.
 Overflow decision (how to handle transcript over-window): serve high-context suites with a
 realistic window (target 32k on the large-model wave) and trim to it; transcript truncates
 head+tail (realistic information loss, recorded via `context_truncated`), mctp trims intelligently
 via the selector budget and rarely hits it. Truncation rate becomes a reported metric, the point
 being that the raw transcript loses information at the window while the compact packet does not.
-Scoring decision: SWE-bench uses BOTH its native test-verified scoring AND the judge ensemble; the
+Scoring decision: SWE-bench uses both its native test-verified scoring and the judge ensemble; the
 judge is shown the native pass/fail as context. Native scoring runs as a post-hoc pass (harness +
 containers), like the judge pass.
 Large-model serving: the large wave uses AWQ-quantized 27-35B models, 1-2 loaded at a time, to keep
@@ -233,7 +233,7 @@ found and fixed:
  RETRIEVE mechanism (only the in-house DEFAULT_QUESTION does). `execute_run` now appends the
  available reference ids and the RETRIEVE instruction whenever the packet has references. Verified:
  LongBench mctp now pulls the document (ret_tok~1441). (On prose, retrieving the whole document
- makes mctp~transcript, an honest result, not a defect.)
+ makes mctp comparable to transcript, which is the correct behavior, not a defect.)
 
 ### 2026-08-24, All benchmarks ready on the host; swarm arrangements; full dry run passed
 Milestone: every suite is prepared on the GPU host and passes a dry run. Datasets on host, 

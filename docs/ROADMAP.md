@@ -63,7 +63,7 @@ not a set of claims; results are reported as they are produced (see
 2. External OSS benchmark adapters. Adapt existing suites so MCTP is measured on independent
  tasks with their own scorers: low-context first (HumanEval, MBPP, short QA), then repository
  and long-context suites (SWE-bench / SWE-bench Verified, RepoBench, LongBench-style).
-3. Persistent, indexed store. Move beyond the in-memory store to a content-addressed, indexed
+3. Persistent: indexed store. Move beyond the in-memory store to a content-addressed, indexed
  backend (semantic + graph indexes) so state can be queried without a full scan.
 4. Intelligence Layer v1. Train the selector/ranker on the episode data the benchmark produces
  (state extraction, relevance ranking, sufficiency prediction), keeping the Core protocol
@@ -111,7 +111,7 @@ Once the baselines and multi-trial runs exist, the headline graphs are:
 
 1. Task success vs. context size, for transcript / summary / RAG / MCTP.
 2. Tokens transferred to the receiver vs. context size.
-3. Reliability (variance, failure rate) vs. context size.
+3. Reliability (variance: failure rate) vs. context size.
 4. Task success vs. number of agents.
 5. Total cost (all inference + retrieval) vs. task success.
 

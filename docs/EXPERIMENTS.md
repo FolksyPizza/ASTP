@@ -16,11 +16,11 @@ limitations.
 ## Method
 Two execution paths are used, kept separate:
 
-1. Automated harness, `MCTP-Bench/run.py [--real]`. Uses the deterministic, model-free
+1. Automated harness: `MCTP-Bench/run.py [--real]`. Uses the deterministic, model-free
  `MockRunner` to validate token accounting, retrieve-on-demand mechanics, episode logging,
  and scoring. The MockRunner echoes the delivered context, so its correctness score is not
  an efficacy measurement.
-2. Model-in-the-loop, each condition is run by a fresh, isolated Claude subagent acting as
+2. Model-in-the-loop: each condition is run by a fresh, isolated Claude subagent acting as
  "Agent B". The agent sees only its assigned context plus an identical neutral question,
  with no access to prior conversation. Retrieve-on-demand requests are fulfilled by
  returning the requested artifact. Results are logged via `record_run(...)` and tagged
@@ -99,7 +99,7 @@ the harness independently of any model.
  pass, the study compares context cost at equal task success and does not demonstrate a
  correctness advantage for MCTP; the tenth is a case where MCTP loses. There were zero
  misleading answers. Task success is judged by keyword-based checks, not human review.
-2. Token reduction is real but not universal, and it scales with the amount of prunable
+2. Token reduction is real but not universal: and it scales with the amount of prunable
  context. MCTP reduced total tokens in eight of ten scenarios and was token-worse in two.
  The effect tracks how much of the flat context is prunable (irrelevant files, dead-ends,
  stale decisions): the large, noisy investigations `outage_investigation` (~2,500 tokens) and

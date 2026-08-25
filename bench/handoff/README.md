@@ -3,9 +3,9 @@
 A minimal, self-contained example of the bug43 handoff: two isolated "Agent B" instances
 answer the same neutral question ("take over bug #43") from two different contexts.
 
-- `baseline_transcript.txt`, the raw Agent-A session log (file dumps, benchmark output, and
+- `baseline_transcript.txt`: the raw Agent-A session log (file dumps, benchmark output, and
  the abandoned distributed-locking approach).
-- `mctp_packet.txt`, the MCTP structured packet from the Core selector, with artifacts as
+- `mctp_packet.txt`: the MCTP structured packet from the Core selector, with artifacts as
  references and retrieve-on-demand.
 
 Gold answer: (1) time-bounded leases; (2) renew the lease before copying node state;

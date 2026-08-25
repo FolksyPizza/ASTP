@@ -35,14 +35,14 @@ of truth. This makes the same log replayable, auditable, and the basis for the a
 from a closed set, a `payload`, and `Provenance` (source, agent, model, timestamp, confidence).
 Events are appended through convenience methods rather than constructed directly:
 
-- `assert_node(id, type, content, prov)`, record a task, entity, or decision node.
+- `assert_node(id, type, content, prov)`: record a task, entity, or decision node.
 - `assert_artifact(id, path, content, language, symbols, prov)`, record an artifact as a
  reference and store its full source in the blob store (see below).
-- `assert_edge(from, to, relation, prov)`, record a typed relation; the edge id is
+- `assert_edge(from, to, relation, prov)`: record a typed relation; the edge id is
  content-addressed from `(from, relation, to)` so the same relation asserted twice is one edge.
 - `supersede(old, new, prov)` and `contradict(id, reason, prov)`, retraction events.
-- `verify(id, status, prov)`, update a node's verification status.
-- `record_transfer(...)`, audit-only; records which packet was sent for a task.
+- `verify(id, status, prov)`: update a node's verification status.
+- `record_transfer(...)`: audit-only; records which packet was sent for a task.
 
 Node and relation types are closed vocabularies (`NODE_TYPES`, `RELATION_TYPES` in `model.py`):
 node types are `task`, `artifact`, `entity`, `decision`; relations are `calls`, `depends_on`,
@@ -94,8 +94,8 @@ deterministic Core baseline; it uses no trained model. Its policy:
 1. Seed the selection with the task node.
 2. Expand outward up to `max_hops` over the graph, following edges through
  `Graph.neighbors(...)`, which returns only believed neighbors by default.
-3. Skip other `task` nodes, so one task's scope does not pull in another's.
-4. If a token budget is given, keep nodes in priority order, task, then decisions, then
+3. Skip other `task` nodes: so one task's scope does not pull in another's.
+4. If a token budget is given: keep nodes in priority order, task, then decisions, then
  artifacts, then entities, dropping nodes that would exceed the budget.
 
 Because expansion is over the believed subgraph, superseded and contradicted nodes are never

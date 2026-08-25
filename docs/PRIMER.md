@@ -13,10 +13,10 @@ agent so it can continue?**
 
 Two common answers, and why each is imperfect:
 
-- **The transcript**, send the entire history of everything the first agent saw and did. Nothing
+- **The transcript**: send the entire history of everything the first agent saw and did. Nothing
  is lost, but it's huge, full of dead ends and outdated decisions, and expensive for the next
  model to read.
-- **A summary**, have a model write a short version. Smaller, but a second model now decides
+- **A summary**: have a model write a short version. Smaller, but a second model now decides
  what matters, and it can drop something critical or keep something misleading, and you lose the
  exact original material.
 
@@ -39,14 +39,14 @@ MCTP stores state as a **graph**. A graph is just **things (nodes)** connected b
 (edges)**. If you've seen a diagram of boxes joined by arrows, that's a graph.
 
 - **Nodes** are the important things. MCTP has four kinds:
- - **Task**, what needs doing ("fix the duplicate-charge bug").
- - **Decision**, a choice that was made, and why ("use idempotency keys, not a lock").
- - **Artifact**, a file, log, or document (referenced, not pasted in full, more below).
- - **Entity**, a concept or component ("the idempotency key").
+ - **Task**: what needs doing ("fix the duplicate-charge bug").
+ - **Decision**: a choice that was made, and why ("use idempotency keys, not a lock").
+ - **Artifact**: a file, log, or document (referenced, not pasted in full, more below).
+ - **Entity**: a concept or component ("the idempotency key").
 - **Edges** are the relationships, and they're *labeled*. A few labels MCTP uses:
- - `depends_on`, `calls`, `modifies`, structural links between code/components.
- - `supersedes`, one decision replaces an earlier one (D replaces C).
- - `relates_to`, `derived_from`, softer connections.
+ - `depends_on`: `calls`, `modifies`, structural links between code/components.
+ - `supersedes`: one decision replaces an earlier one (D replaces C).
+ - `relates_to`: `derived_from`, softer connections.
 
 Because the relationships are explicit and labeled, the system can *follow* them instead of
 guessing. That's the whole trick.
@@ -133,5 +133,5 @@ and inspectable.
 MCTP is a research prototype. It's evaluated by having a second agent actually do the task from
 each kind of handoff (transcript, summary, MCTP) and checking two things: **did the task
 succeed** (judged by the benchmark's own tests), and **at what cost** (tokens sent, extra
-fetches, reliability across repeated runs). The honest current status and numbers are in
+fetches, reliability across repeated runs). The current status and numbers are in
 [EXPERIMENTS.md](EXPERIMENTS.md), including a case where MCTP *fails*, which is kept on purpose.
