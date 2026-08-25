@@ -116,6 +116,26 @@ for heavy reasoners). Open item: record output/thinking tokens per episode so to
 count reasoning cost — reasoning models are exactly where structured state may change the
 cost/benefit, so this must be measured, not assumed.
 
+### 2026-08-24 — Capable-model requirement, capability gate, and hybrid inline delivery
+Decision (model floor): require receivers that actually perform. A model that fails most tasks
+makes every condition look identical, so we set a minimum-capability gate (scripts/capability_probe.sh:
+HumanEval+GSM8K probe, go/no-go at a threshold) and raise the model floor to recent, capable 14-32B
+OSS models chosen because they clear the gate empirically — not because they are claimed to. Served
+at a lower 32K window (faster, fits, covers most tasks; the rare longer task is trimmed and recorded).
+Large 32B models use AWQ, run single-agent suites only, 1-2 loaded at a time.
+Finding (14B validates the floor): Qwen2.5-14B-Instruct at 64K solved HumanEval 4/5 under BOTH
+transcript and mctp (the one miss failed both conditions) — a real signal, and mctp preserved
+correctness at equal task success. The prior 7B scored ~0, which is why conditions were
+indistinguishable.
+Refinement (hybrid inline delivery): the mctp builder now inlines artifact content that FITS the
+budget and references only overflow, instead of always referencing. This fixes the LongBench
+extra-round penalty: on a 60K-budget run the document that fits is delivered inline (no retrieve
+round, mctp latency ~= transcript), while a document that overflows is referenced and pulled. The
+token win now comes only from excluding irrelevant nodes and deferring genuine overflow — not from
+withholding needed context. (LongBench correctness on the largest 60K tasks was still 0/2 for the
+14B; those are the hardest needle-in-haystack items and need easier long-context tasks and native/
+judge scoring to read properly.)
+
 ### 2026-08-24 — 128K high-context validation (plumbing check, not a finding)
 Setup: served Qwen2.5-7B-Instruct at max_model_len 131072 (YaRN factor 4) on 2x RTX 3090 (TP=2,
 ~23GB/card); ran 6 large tasks (LongBench 46-63K tokens, SWE-bench 51-56K) under transcript vs mctp
