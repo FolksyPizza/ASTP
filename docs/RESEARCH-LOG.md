@@ -116,6 +116,25 @@ for heavy reasoners). Open item: record output/thinking tokens per episode so to
 count reasoning cost — reasoning models are exactly where structured state may change the
 cost/benefit, so this must be measured, not assumed.
 
+### 2026-08-24 — 128K high-context validation (plumbing check, not a finding)
+Setup: served Qwen2.5-7B-Instruct at max_model_len 131072 (YaRN factor 4) on 2x RTX 3090 (TP=2,
+~23GB/card); ran 6 large tasks (LongBench 46-63K tokens, SWE-bench 51-56K) under transcript vs mctp
+at a 120K window, concurrency 1-2.
+Results (n=6, one model, one trial, 2 of 4 conditions):
+- SWE-bench: mctp avg context 1,489 tok vs transcript 53,726 (~36x less); latency 4.0s vs 18.9s
+  (~4.7x faster) — mctp patched from file references without pulling full contents.
+- LongBench: mctp packet 62 tok vs transcript 56,823, but mctp retrieves the whole document, so no
+  effective token win and it is slightly SLOWER (35.3s vs 28.3s, extra round). Both scored 0/4.
+Reading: this validates (a) a small model serves a genuine 128K window here, (b) the harness
+streams/records correctly at scale with zero truncation, and (c) the reference/retrieval layer is a
+large win for code. It is NOT a performance finding: correctness is unestablished (SWE-bench not
+test-verified; LongBench 0/4 both ways), the sample is tiny, and prose is a wash-to-loss. Token
+reduction without proven correctness is the regression the benchmark design explicitly warns
+against, so these numbers stay in the log, not the README, until the full evaluation establishes
+accuracy-at-cost across models/trials/judge/native scoring.
+Operational: run sweeps detached (screen/tmux or nohup) — an SSH drop killed the attached run at the
+tail (the work had completed, but a longer run would lose progress beyond the last checkpoint).
+
 ### 2026-08-24 — Core selector refined: distance- and budget-aware
 Decision: refine the Core cold-start selector before the run so the mctp condition represents the
 protocol well (with further refinement expected after seeing results). The selector now ranks
