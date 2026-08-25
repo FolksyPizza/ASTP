@@ -135,6 +135,16 @@ token win now comes only from excluding irrelevant nodes and deferring genuine o
 withholding needed context. (LongBench correctness on the largest 60K tasks was still 0/2 for the
 14B; those are the hardest needle-in-haystack items and need easier long-context tasks and native/
 judge scoring to read properly.)
+Correction (SWE-bench, important): the earlier 7B "36x token win" on SWE-bench was an artifact —
+the weak model patched blind from file references without reading them (pulls=0), likely producing
+wrong patches. With the 14B + inline delivery, mctp inlines the files it needs (avg 46,262 tok) and
+is essentially equal to transcript (53,726 tok), not far smaller. This is the honest result: SWE-bench's
+snapshot is only the patch-touched files (all relevant), so MCTP has nothing to prune and correctly
+degrades to ~transcript. MCTP's token advantage requires PRUNABLE context, which lives in the
+in-house/multifile controls (deliberate noise) and would appear on SWE-bench only if the snapshot
+included sibling/irrelevant repo files. Implication: to test MCTP selection on SWE-bench, enrich the
+per-instance snapshot with additional repo files; otherwise report SWE-bench as an artifact/retrieval
+and correctness test, not a selection test.
 
 ### 2026-08-24 — 128K high-context validation (plumbing check, not a finding)
 Setup: served Qwen2.5-7B-Instruct at max_model_len 131072 (YaRN factor 4) on 2x RTX 3090 (TP=2,
