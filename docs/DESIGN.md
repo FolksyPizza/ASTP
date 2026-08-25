@@ -25,11 +25,11 @@ collaboration; improve auditability; and improve the cost/performance tradeoff.
 MCTP is split into two layers so the protocol never depends on any learned component.
 
 - Core MCTP (the protocol): state representation, memory storage, an audit log, retrieval
-  including a deterministic cold-start selector, provenance, and context transfer. Core is
-  fully usable with zero trained models.
+ including a deterministic cold-start selector, provenance, and context transfer. Core is
+ fully usable with zero trained models.
 - Intelligence Layer (optional, learned): context ranking, sufficiency prediction, retrieval
-  planning, cost optimization, adaptive/predictive feeding. These sit on top of Core and only
-  replace or augment the baseline selector's ranking.
+ planning, cost optimization, adaptive/predictive feeding. These sit on top of Core and only
+ replace or augment the baseline selector's ranking.
 
 Only Core is the portable protocol. MCTP-the-format and MCTP-the-selector-model are separable;
 generalization across model families is claimed only for the format.
@@ -40,11 +40,11 @@ Two model roles are kept separate because they have different evaluation criteri
 profiles.
 
 - Extractor (ingestion): turns raw agent context into structured MCTP nodes with provenance,
-  incrementally as an agent works. Its recall is the ceiling on the whole system; anything it
-  drops, the selector cannot recover.
+ incrementally as an agent works. Its recall is the ceiling on the whole system; anything it
+ drops, the selector cannot recover.
 - Selector (transfer/retrieval): given the materialized graph, a task, and a budget, returns a
-  bounded packet of existing nodes. It is extractive (it chooses provenance-tagged nodes) so
-  that every transferred item has a source and omissions are measurable.
+ bounded packet of existing nodes. It is extractive (it chooses provenance-tagged nodes) so
+ that every transferred item has a source and omissions are measurable.
 
 Retrieval and handoff are the same operation with different seeds. Selection is a negotiation:
 the system pushes a predicted-relevant packet and the receiver pulls more when it detects
@@ -55,12 +55,12 @@ insufficiency; the gap between push and pull is the training signal for the Inte
 The default packet composes three delivery tiers rather than choosing between a full dump and
 an over-compressed summary:
 
-- Always provide inline: high-value state — task objective, current state, active decisions,
-  constraints, critical dependencies.
+- Always provide inline: high-value state, task objective, current state, active decisions,
+ constraints, critical dependencies.
 - Provide as references: artifacts (source files, docs, logs) as `{path, hash, language,
-  symbols, dependencies}`, enough to locate and reason about without the bytes.
+ symbols, dependencies}`, enough to locate and reason about without the bytes.
 - Retrieve on demand: large or expensive content is fetched only when the receiver requests it
-  (`RETRIEVE <id>`).
+ (`RETRIEVE <id>`).
 
 A targeted retrieve is expected behavior, not a miss; a fallback to the raw source for
 something un-referenced is the miss. The selector may also refuse to compress when a task needs
@@ -77,20 +77,20 @@ edge { id, from, to, relation_type, provenance }
 
 - Node types: `task`, `artifact`, `entity`, `decision`.
 - Relation vocabulary (closed for v0.1): `calls`, `depends_on`, `modifies`, `supersedes`,
-  `contradicts`, `derived_from`, `relates_to`.
+ `contradicts`, `derived_from`, `relates_to`.
 - Identity: immutable artifacts are content-addressed; mutable conceptual nodes use a stable id
-  with a version chain. Entities are anchored to `content-hash(artifact) + symbol locator`
-  where possible, so two references to the same real thing resolve to the same id and the graph
-  does not fragment.
+ with a version chain. Entities are anchored to `content-hash(artifact) + symbol locator`
+ where possible, so two references to the same real thing resolve to the same id and the graph
+ does not fragment.
 - Provenance and trust: each node carries source, agent, model, timestamp, confidence, and a
-  verification status (`asserted`, `tool-verified`, `human-verified`, `contradicted`).
-  Convergence policy (which concurrent write survives) is decoupled from trust ranking (what the
-  selector presents); the selector prefers verified state and surfaces contradictions rather
-  than silently taking the newest.
+ verification status (`asserted`, `tool-verified`, `human-verified`, `contradicted`).
+ Convergence policy (which concurrent write survives) is decoupled from trust ranking (what the
+ selector presents); the selector prefers verified state and surfaces contradictions rather
+ than silently taking the newest.
 - Retraction versus maintenance: invalidation ("this is now false") is a first-class
-  `supersedes`/`contradicts` event; maintenance ("rarely used, demote") is a deterministic,
-  threshold-based storage-tiering decision. Superseded or contradicted state is retained for
-  audit but excluded from transfer by default.
+ `supersedes`/`contradicts` event; maintenance ("rarely used, demote") is a deterministic,
+ threshold-based storage-tiering decision. Superseded or contradicted state is retained for
+ audit but excluded from transfer by default.
 
 ## Storage
 
@@ -108,12 +108,12 @@ signal for the Intelligence Layer. No attention data is required; all signals ar
 
 ```
 episode {
-  scenario, condition, runner,
-  context_tokens, packet_node_ids,
-  retrieved_ids, retrieved_tokens,   # retrieve-on-demand pulls
-  codebase_reads,                    # fallbacks to raw source not in the packet
-  used_node_ids,                     # packet nodes referenced in output or actions
-  outcome_pass, criteria, misleading
+ scenario, condition, runner,
+ context_tokens, packet_node_ids,
+ retrieved_ids, retrieved_tokens, # retrieve-on-demand pulls
+ codebase_reads, # fallbacks to raw source not in the packet
+ used_node_ids, # packet nodes referenced in output or actions
+ outcome_pass, criteria, misleading
 }
 ```
 
@@ -135,13 +135,13 @@ the benchmark suite design is in the MCTP-Bench repository.
 ## Roadmap
 
 - v0.1 (current): semantic-core schema, append-only event log, materialized current-state view,
-  deterministic cold-start selector, artifact references with retrieve-on-demand, and an
-  agent-handoff benchmark against a raw-transcript baseline.
+ deterministic cold-start selector, artifact references with retrieve-on-demand, and an
+ agent-handoff benchmark against a raw-transcript baseline.
 - v0.2+: trained selector (the learning loop), three-tier storage and maintenance, adaptive
-  feeding, abstractive bridge notes, multi-model adapters, a concurrency model, and security
-  mitigations.
+ feeding, abstractive bridge notes, multi-model adapters, a concurrency model, and security
+ mitigations.
 - v0.3: native integration, in which MCTP observes the agent environment, snapshots state, and
-  delivers optimized context inline. Gated on the feedback/observation interface.
+ delivers optimized context inline. Gated on the feedback/observation interface.
 
 ## Open questions
 

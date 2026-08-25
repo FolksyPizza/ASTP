@@ -7,8 +7,8 @@ their details only when they are needed.
 
 MCTP is not primarily a compression system; it separates persistent agent state from active
 model context. Its operating principle is *preserve everything, propagate selectively, retrieve
-precisely*: the complete state — decisions, constraints, artifacts, provenance, and superseded
-approaches — is stored and auditable, only the relevant current state is sent to the next agent,
+precisely*: the complete state, decisions, constraints, artifacts, provenance, and superseded
+approaches, is stored and auditable, only the relevant current state is sent to the next agent,
 and the original evidence stays retrievable on demand.
 
 ## Overview
@@ -28,19 +28,19 @@ replace retrieval, and does not guarantee optimal context selection. See
 
 Three ways to hand work from one agent to the next:
 
-- **Transcript** — sends everything: "here is all of it, you figure it out."
-- **Summary** — sends an interpretation: "another model decided what you should know."
-- **MCTP** — preserves everything, sends the relevant current state, and keeps the underlying
-  evidence retrievable on demand.
+- **Transcript**, sends everything: "here is all of it, you figure it out."
+- **Summary**, sends an interpretation: "another model decided what you should know."
+- **MCTP**, preserves everything, sends the relevant current state, and keeps the underlying
+ evidence retrievable on demand.
 
 | | Transcript | Summary | MCTP |
 |---|---|---|---|
 | What the receiver gets | The full history | An LLM's condensed interpretation | Selected current-state nodes + artifact references |
-| Extra inference to prepare it | None | A summarization call (its cost must be counted) | None — deterministic selection |
+| Extra inference to prepare it | None | A summarization call (its cost must be counted) | None, deterministic selection |
 | Stale / superseded content | Included as-is | May keep or drop it, unpredictably | Excluded from the packet; retained in state and marked superseded |
 | Provenance & exact source | Present but unstructured | Usually lost | Explicit and structured (source, agent, supersession) |
 | Underlying information after handoff | Still in the transcript | Lost if the summary dropped it | Preserved and retrievable (`RETRIEVE <id>`) |
-| Risk of omitting a critical fact | Low — it sends everything | Real — the model may drop it | Real only if the fact is not linked to the task (extraction fidelity is the ceiling) |
+| Risk of omitting a critical fact | Low, it sends everything | Real, the model may drop it | Real only if the fact is not linked to the task (extraction fidelity is the ceiling) |
 | Cost as history accumulates | Grows with the whole history | Re-summarize repeatedly | Active context stays small; state is stored separately |
 | Structured / auditable | No | No | Yes |
 | Built for agent-to-agent handoff | No | No | Yes |
@@ -53,32 +53,32 @@ retrieval (RAG), and MCTP as separate baselines; see the
 
 MCTP is organized into three layers.
 
-1. State layer — the explicit, high-value context that is always transferred: goals,
-   decisions (including rejected alternatives and supersession), constraints, and
-   dependencies. Superseded or contradicted state is retained for audit but excluded from
-   transfer by default.
-2. Artifact layer — files, code, documents, and logs are represented as references
-   (`path`, content hash, language, symbols, dependencies) rather than inlined summaries. The
-   full source of truth is stored and fetched on demand.
-3. Retrieval layer — deeper information is retrieved only when the receiver requests it
-   (`RETRIEVE <id>`), so large or expensive content is not transferred pre-emptively.
+1. State layer, the explicit, high-value context that is always transferred: goals,
+ decisions (including rejected alternatives and supersession), constraints, and
+ dependencies. Superseded or contradicted state is retained for audit but excluded from
+ transfer by default.
+2. Artifact layer, files, code, documents, and logs are represented as references
+ (`path`, content hash, language, symbols, dependencies) rather than inlined summaries. The
+ full source of truth is stored and fetched on demand.
+3. Retrieval layer, deeper information is retrieved only when the receiver requests it
+ (`RETRIEVE <id>`), so large or expensive content is not transferred pre-emptively.
 
 Together these implement hybrid context delivery: always provide high-value state inline,
 provide artifacts as references, and retrieve heavy content on demand.
 
 The protocol is split into a Core layer (state representation, storage, audit log, retrieval,
-provenance, transfer — usable with no trained models) and an optional Intelligence Layer
+provenance, transfer, usable with no trained models) and an optional Intelligence Layer
 (learned ranking, sufficiency prediction, adaptive feeding). Only Core is the portable
 protocol. See [docs/DESIGN.md](docs/DESIGN.md).
 
 ## Repository layout
 
 ```
-core/mctp/      Core reference implementation (event-sourced store, selector, transfer)
-docs/           PRIMER.md (start here), DESIGN.md (rationale), ARCHITECTURE.md (mechanics),
-                ROADMAP.md, schema-v0.1.md, EXPERIMENTS.md, RESEARCH-LOG.md
-bench/          local viability probe and handoff example
-intelligence/   optional Intelligence Layer (design notes)
+core/mctp/ Core reference implementation (event-sourced store, selector, transfer)
+docs/ PRIMER.md (start here), DESIGN.md (rationale), ARCHITECTURE.md (mechanics),
+ ROADMAP.md, schema-v0.1.md, EXPERIMENTS.md, RESEARCH-LOG.md
+bench/ local viability probe and handoff example
+intelligence/ optional Intelligence Layer (design notes)
 ```
 
 The evaluation harness lives in the companion repository
@@ -89,9 +89,9 @@ The evaluation harness lives in the companion repository
 These results are preliminary and should be read as an existence check of the mechanism and
 its costs, not as a general performance claim. The evaluation covers ten hand-authored
 scenarios, a single trial per condition, all runs using Claude models, with task success judged
-by keyword-based checks rather than human review. Each scenario is run under two conditions — a
+by keyword-based checks rather than human review. Each scenario is run under two conditions, a
 `flat` baseline (the raw Agent-A transcript) and an `mctp` condition (the Core selector packet
-with retrieve-on-demand) — by an isolated Claude subagent that sees only its context and an
+with retrieve-on-demand), by an isolated Claude subagent that sees only its context and an
 identical neutral task. Reported totals include retrieval cost, not just the initial packet.
 Token counts use the tiktoken `o200k_base` encoding; the direction of each comparison holds
 under the other tokenizers tested.
@@ -99,7 +99,7 @@ under the other tokenizers tested.
 Across the ten scenarios (20 conditions): the `flat` baseline passed all ten; the `mctp`
 condition passed nine and failed one. On the nine where both pass, this compares context cost at
 equal task success and does not demonstrate a correctness advantage for MCTP. The one failure is
-instructive — in `hidden_constraint` a required constraint was present in the transcript but not
+instructive, in `hidden_constraint` a required constraint was present in the transcript but not
 linked to the task in the graph, so the packet omitted it and the receiver could not answer;
 extraction and linking fidelity, not the selector, is the ceiling.
 
@@ -108,9 +108,9 @@ effect scales with how much of the context is prunable:
 
 | Scenario | flat total | mctp total | Δ total |
 |----------|-----------:|-----------:|--------:|
-| outage_investigation (large, noisy) | 2476 | 828 | −67% |
-| payment_idempotency (large, noisy) | 2319 | 645 | −72% |
-| bug43 (medium) | 783 | 513 | −35% |
+| outage_investigation (large, noisy) | 2476 | 828 | -67% |
+| payment_idempotency (large, noisy) | 2319 | 645 | -72% |
+| bug43 (medium) | 783 | 513 | -35% |
 | auth_migration (small, already concise) | 291 | 436 | +50% |
 
 Below roughly 1,000 tokens there is often little to prune, so MCTP's structural overhead and any
@@ -124,32 +124,32 @@ methodology, per-run data, and interpretation are in [docs/EXPERIMENTS.md](docs/
 
 - A small number of hand-authored scenarios; results are not yet statistically meaningful.
 - All model runs so far use Claude; there is no cross-model-family evidence yet. A local
-  open-model sweep (vLLM, via the MCTP-Bench `--model` runner) is set up and is the next run.
+ open-model sweep (vLLM, via the MCTP-Bench `--model` runner) is set up and is the next run.
 - Human validation of scoring has not been performed; correctness is judged by keyword-based
-  checks.
+ checks.
 - Token counts use tiktoken (OpenAI encodings); open-model tokenizers (Qwen, Llama, and
-  similar) are supported by the harness but were not exercised in this environment.
+ similar) are supported by the harness but were not exercised in this environment.
 - The benchmark is early; scenario coverage and scoring are still maturing.
 - MCTP graphs in the scenarios are authored, not produced by an extractor, so extraction
-  fidelity is not yet measured.
+ fidelity is not yet measured.
 
 ## Roadmap
 
 Approximate targets for a research prototype, not commitments; dates may move as results come in.
 
-- **Now (Aug 2026)** — Core reference implementation and the MCTP-Bench harness are complete. Nine
-  evaluation suites (code, math, repository, long-context, and multi-agent) are prepared, and the
-  large-scale runner — concurrent, checkpointed/resumable, ~300k receiver runs across a nine-model
-  sweep — is validated end to end on local open models. The benchmark is ready to run.
-- **Late Aug – Sep 2026** — throughput calibration, then the first full evaluation: the small-model
-  wave (8–14B) across all suites with deferred cross-review judge scoring, and the first public
-  results.
-- **Sep – Oct 2026** — the large-model wave (quantized 27–35B), SWE-bench native test-verified
-  scoring, and a results leaderboard others can track.
-- **Q4 2026** — Intelligence Layer v0.1: the learned selector/reranker, trained on the accumulated
-  episodes (synthetic data — see [docs/MODEL-CARD.md](docs/MODEL-CARD.md)), reported against the
-  deterministic Core baseline.
-- **Beyond** — adaptive context feeding, multi-agent swarm evaluation at scale, and schema v0.2.
+- **Now (Aug 2026)**, Core reference implementation and the MCTP-Bench harness are complete. Nine
+ evaluation suites (code, math, repository, long-context, and multi-agent) are prepared, and the
+ large-scale runner, concurrent, checkpointed/resumable, ~300k receiver runs across a nine-model
+ sweep, is validated end to end on local open models. The benchmark is ready to run.
+- **Late Aug - Sep 2026**, throughput calibration, then the first full evaluation: the small-model
+ wave (8-14B) across all suites with deferred cross-review judge scoring, and the first public
+ results.
+- **Sep - Oct 2026**, the large-model wave (quantized 27-35B), SWE-bench native test-verified
+ scoring, and a results leaderboard others can track.
+- **Q4 2026**, Intelligence Layer v0.1: the learned selector/reranker, trained on the accumulated
+ episodes (synthetic data, see [docs/MODEL-CARD.md](docs/MODEL-CARD.md)), reported against the
+ deterministic Core baseline.
+- **Beyond**, adaptive context feeding, multi-agent swarm evaluation at scale, and schema v0.2.
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) for the detailed phase plan.
 
