@@ -116,6 +116,22 @@ for heavy reasoners). Open item: record output/thinking tokens per episode so to
 count reasoning cost — reasoning models are exactly where structured state may change the
 cost/benefit, so this must be measured, not assumed.
 
+### 2026-08-24 — Model tiers and swarm one-at-a-time timing
+Decision (tiers): the 14B tier is for fast, large-scale telemetry/dev runs only, NOT final
+results. Final results use capability-gated 20-35B models. Candidate results-tier models to gate:
+Qwen2.5-32B-Instruct and Qwen2.5-Coder-32B (AWQ), Qwen3-32B / QwQ-32B (reasoning), gemma3-27B,
+Mistral-Small-3-24B, DeepSeek-R1-Distill-Qwen-32B; already on the host via Ollama: gemma3:27b,
+qwen3:27b-128k, qwen3:35b-128k, gpt-oss:20b. Each must clear scripts/capability_probe.sh empirically
+before inclusion. Long-term goal: run the FULL suite on the strongest models.
+Decision (swarm memory, large models): when the role models in a swarm pipeline won't co-reside in
+VRAM, run them one at a time (load, run the stage, unload, load the next). Per-run `latency_s`
+already measures inference only (the model is resident and serving during the request), so the
+idealized "all agents co-resident" pipeline time is the SUM of the stage latencies — computable
+post-hoc from stored data; the model-swap/reload time is separate overhead and is recorded apart so
+actual wall-clock and idealized time are both reportable. This is possible because we already store,
+per run: full completion text, native + reference token counts, time-to-first-token, per-token
+timeline (which second each chunk was emitted), and total latency.
+
 ### 2026-08-24 — Capable-model requirement, capability gate, and hybrid inline delivery
 Decision (model floor): require receivers that actually perform. A model that fails most tasks
 makes every condition look identical, so we set a minimum-capability gate (scripts/capability_probe.sh:
