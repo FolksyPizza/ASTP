@@ -116,6 +116,19 @@ for heavy reasoners). Open item: record output/thinking tokens per episode so to
 count reasoning cost — reasoning models are exactly where structured state may change the
 cost/benefit, so this must be measured, not assumed.
 
+### 2026-08-25 — On-box model capability gate
+Gated the on-box 20-35B models via Ollama (12 HumanEval + 12 GSM8K, transcript, threshold 40%):
+- qwen3:27b (qwen3.8:27b-128k): HumanEval 12/12, GSM8K 12/12, overall 100% — PASS (standout).
+- gemma3:27b: HumanEval 12/12, GSM8K 10/12, overall 92% — PASS (different family).
+- qwen3:35b (qwen3.6:35b-128k): HumanEval 6/12, GSM8K 12/12, overall 75% — PASS but weaker on code
+  than the 27B (bigger is not automatically better — empirical gating is what matters).
+- gpt-oss:20b: all runs errored (HTTP 500 on this Ollama build) — unusable here, excluded.
+Results-tier candidates locked from on-box: qwen3:27b + gemma3:27b (both >90%, two families); qwen3:35b
+available as a third. For cross-family breadth a Qwen2.5-Coder-32B and a Mistral/other-family model
+should be gated next.
+Operational: run detached work in `screen` — plain setsid/nohup jobs are killed when the launching
+SSH session drops on this WSL host; the gate only completed once moved into a screen session.
+
 ### 2026-08-24 — Model tiers and swarm one-at-a-time timing
 Decision (tiers): the 14B tier is for fast, large-scale telemetry/dev runs only, NOT final
 results. Final results use capability-gated 20-35B models. Candidate results-tier models to gate:
