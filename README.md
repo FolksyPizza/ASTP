@@ -85,39 +85,37 @@ The evaluation harness lives in the companion repository
 
 ## Current results
 
-These results are preliminary and should be read as an existence check of the mechanism and
-its costs, not as a general performance claim. The evaluation covers ten hand-authored
-scenarios, a single trial per condition, all runs using Claude models, with task success judged
-by keyword-based checks rather than human review. Each scenario is run under two conditions: a
-`flat` baseline (the raw Agent-A transcript) and an `mctp` condition (the Core selector packet
-with retrieve-on-demand), by an isolated Claude subagent that sees only its context and an
-identical neutral task. Reported totals include retrieval cost, not just the initial packet.
-Token counts use the tiktoken `o200k_base` encoding; the direction of each comparison holds
-under the other tokenizers tested.
+These are interim results from a large-scale run: one capable model over the standard suites, at
+a single trial per task. The model is a 27B-parameter open-weights model (Qwen3 series, 4-bit
+quantized) served with a 128K context window, run under four conditions: `transcript` (the full
+accumulated context), `summary` (same-model summarization), `rag` (TF-IDF retrieval), and `mctp`
+(a believed-state packet selected to a token budget). Task success is an objective check:
+executed unit tests for the code suites, exact-match answers otherwise. Each cell reports the
+pass rate and the average delivered-context size in tokens (tiktoken `o200k_base`).
 
-Across the ten scenarios (20 conditions): the `flat` baseline passed all ten; the `mctp`
-condition passed nine and failed one. On the nine where both pass, this compares context cost at
-equal task success and does not demonstrate a correctness advantage for MCTP. The one failure is
-instructive: in `hidden_constraint` a required constraint was present in the transcript but not
-linked to the task in the graph, so the packet omitted it and the receiver could not answer.
-Extraction and linking fidelity, not the selector, is the ceiling.
+| Suite | transcript | summary | rag | mctp |
+| --- | --- | --- | --- | --- |
+| gsm8k | 97% / 0 | 97% / 0 | 97% / 0 | 97% / 63 |
+| humaneval | 96% / 0 | 96% / 0 | 96% / 0 | 96% / 136 |
+| mbpp | 82% / 0 | 82% / 0 | 82% / 0 | 81% / 52 |
+| multifile | 100% / 80 | 91% / 279 | 100% / 75 | 100% / 157 |
+| longbench | 51% / 12,360 | 40% / 836 | 37% / 354 | 50% / 180 |
 
-On cost, MCTP reduced total tokens in eight of ten scenarios and increased them in two. The
-effect scales with how much of the context is prunable:
+Cells are pass rate / average context tokens.
 
-| Scenario | flat total | mctp total | Delta total |
-|----------|-----------:|-----------:|--------:|
-| outage_investigation (large, noisy) | 2476 | 828 | -67% |
-| payment_idempotency (large, noisy) | 2319 | 645 | -72% |
-| bug43 (medium) | 783 | 513 | -35% |
-| auth_migration (small, already concise) | 291 | 436 | +50% |
+On the low-context suites (gsm8k, humaneval, mbpp) the four conditions fall within a point of each
+other. These tasks carry little prunable context, so the delivery method does not change the
+outcome; MCTP does not cost accuracy where there is nothing to select.
 
-Below roughly 1,000 tokens there is often little to prune, so MCTP's structural overhead and any
-retrieval can exceed the baseline; the benefit appears in larger, noisier contexts.
+The long-context suite is where the delivery method separates. On longbench, MCTP reaches the
+accuracy of the full transcript (50% against 51%) while delivering about one sixty-ninth of the
+context (180 tokens against 12,360), and it scores above both same-model summarization and TF-IDF
+retrieval. That is the intended result: the accuracy of sending everything at a fraction of the
+token cost.
 
-Full per-scenario descriptions are in the MCTP-Bench
-[scenarios doc](https://github.com/FolksyPizza/MCTP-Bench/blob/main/docs/SCENARIOS.md), and full
-methodology, per-run data, and interpretation are in [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md).
+The repobench, swebench, and multi-agent (swarm) suites are still being finalized and are not yet
+reported. Full methodology and the per-suite tables are in the MCTP-Bench
+[results doc](https://github.com/FolksyPizza/MCTP-Bench/blob/main/docs/RESULTS.md).
 
 ## Limitations
 
