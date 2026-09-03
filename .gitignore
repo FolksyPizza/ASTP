@@ -4,3 +4,10 @@ __pycache__/
 # Local working file — launch video brief, not for publication
 VIDEO_PROMPT.md
 DESIGN_SYSTEM_INTAKE.md
+
+# Local benchmark review data (large; archived in OCI, not for git)
+benchmark-review/data/
+
+# Private OCI bucket access — contains a private key, never commit
+oci-bucket-access/
+oci-bucket-access.zip

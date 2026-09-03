@@ -99,7 +99,7 @@ pass rate and the average delivered-context size in tokens (tiktoken `o200k_base
 | humaneval | 96% / 0 | 96% / 0 | 96% / 0 | 96% / 136 |
 | mbpp | 82% / 0 | 82% / 0 | 82% / 0 | 81% / 52 |
 | multifile | 100% / 80 | 91% / 279 | 100% / 75 | 100% / 157 |
-| longbench | 51% / 12,360 | 40% / 836 | 37% / 354 | 50% / 180 |
+| longbench | 61% / 12,360 | 46% / 836 | 46% / 354 | 59% / 180 |
 
 Cells are pass rate / average context tokens.
 
@@ -107,11 +107,12 @@ On the low-context suites (gsm8k, humaneval, mbpp) the four conditions fall with
 other. These tasks carry little prunable context, so the delivery method does not change the
 outcome; MCTP does not cost accuracy where there is nothing to select.
 
-The long-context suite is where the delivery method separates. On longbench, MCTP reaches the
-accuracy of the full transcript (50% against 51%) while delivering about one sixty-ninth of the
-context (180 tokens against 12,360), and it scores above both same-model summarization and TF-IDF
-retrieval. That is the intended result: the accuracy of sending everything at a fraction of the
-token cost.
+The long-context suite is where the delivery method separates. On longbench, MCTP nearly matches
+the full transcript (59% against 61%) while delivering about one sixty-ninth of the context
+(180 tokens against 12,360), and it scores about thirteen points above both same-model
+summarization and TF-IDF retrieval. On the smaller models, whose 8192-token window forces the
+transcript to truncate, MCTP wins outright. That is the intended result: the accuracy of sending
+everything at a fraction of the token cost.
 
 The repobench, swebench, and multi-agent (swarm) suites are still being finalized and are not yet
 reported. Full methodology and the per-suite tables are in the MCTP-Bench
