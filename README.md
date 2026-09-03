@@ -1,24 +1,32 @@
 # Model Context Transfer Protocol
 
-MCTP is a protocol for reconstructing model-relevant state between AI models and agents.
-Instead of transferring an entire conversation history, MCTP represents the important state
-explicitly, transfers the high-value context, references deeper artifacts, and retrieves
-their details only when they are needed.
+MCTP is a protocol for carrying agent state across handoffs: between the agents of a swarm, or
+between models in a chain. Instead of passing an entire conversation history from one agent to the
+next, MCTP represents the important state explicitly, hands off the high-value current state,
+references deeper artifacts, and retrieves their details only when they are needed.
 
-MCTP is not primarily a compression system; it separates persistent agent state from active
-model context. Its operating principle is *preserve everything, propagate selectively, retrieve
-precisely*: the complete state (decisions, constraints, artifacts, provenance, and superseded
-approaches) is stored and auditable, only the relevant current state is sent to the next agent,
-and the original evidence stays retrievable on demand.
+MCTP is built for multi-agent workflows, where the same state passes through many hands. It is not
+primarily a compression system; it separates persistent agent state from active model context.
+Its operating principle is *preserve everything, propagate selectively, retrieve precisely*: the
+complete state (decisions, constraints, artifacts, provenance, and superseded approaches) is
+stored and auditable, only the relevant current state is handed to the next agent, and the
+original evidence stays retrievable on demand.
 
 ## Overview
 
-Agent-to-agent and model-to-model workflows commonly hand off work as raw transcripts or as
-free-text summaries. Both are lossy in ways that matter: transcripts carry stale content
-(abandoned approaches, superseded decisions) and large volumes of low-value text, while
-summaries can omit implementation detail the receiver needs. MCTP addresses this by
-transferring an explicit, provenance-tracked representation of state, with source material
-available on demand.
+Agent swarms and model-to-model chains hand off work as raw transcripts or free-text summaries.
+Both degrade as the work passes through more agents. A transcript grows with the whole accumulated
+history until it strains or overflows the context window, and it drags along stale content
+(abandoned approaches, superseded decisions). A summary re-interprets the state at every hop,
+drifting and dropping the provenance and detail the next agent needs. MCTP instead hands off an
+explicit, provenance-tracked representation of the current state that stays compact and accurate
+across an arbitrary number of handoffs, with the original source material available on demand.
+
+This is where the advantage is structural rather than incidental. A summary cannot preserve which
+agent established a fact and whether it was later superseded, and plain retrieval has no state
+model at all. Only an explicit, event-sourced believed-state survives a chain of handoffs intact,
+which is why the multi-agent case, not context reduction on a single turn, is the protocol's
+central claim.
 
 Scope is deliberately limited. MCTP does not attempt to solve AI memory in general, does not
 replace retrieval, and does not guarantee optimal context selection. See
@@ -120,34 +128,36 @@ reported. Full methodology and the per-suite tables are in the MCTP-Bench
 
 ## Limitations
 
-- A small number of hand-authored scenarios; results are not yet statistically meaningful.
-- All model runs so far use Claude; there is no cross-model-family evidence yet. A local
-  open-model sweep (vLLM, via the MCTP-Bench `--model` runner) is set up and is the next run.
-- Human validation of scoring has not been performed; correctness is judged by keyword-based
-  checks.
-- Token counts use tiktoken (OpenAI encodings); open-model tokenizers (Qwen, Llama, and
-  similar) are supported by the harness but were not exercised in this environment.
-- The benchmark is early; scenario coverage and scoring are still maturing.
-- MCTP graphs in the scenarios are authored, not produced by an extractor, so extraction
-  fidelity is not yet measured.
+- Results are interim: one capable open-weights model and two small models so far, at a single
+  trial for the large model. Broader model coverage, more trials, and the deferred cross-review
+  judge pass are in progress.
+- Two suites are not yet reportable: repobench pending a completion-prompt fix, and swebench
+  pending native test-verified scoring.
+- The clearest wins are on long-context and multi-agent handoffs. On cold-start, low-context
+  tasks MCTP neither helps nor hurts, as expected when there is nothing to select.
+- Scoring is automated (execution for code, robust answer matching for QA); human validation is
+  in progress through the review tooling, and a deferred judge pass will add graded review.
+- The believed-state graphs for the synthetic suites are built by the adapters, not produced by a
+  general extractor. Extractor quality is future work and is the ceiling on real-world use.
 
 ## Roadmap
 
 Approximate targets for a research prototype, not commitments; dates may move as results come in.
 
-- **Now (Aug 2026):** the Core reference implementation and the MCTP-Bench harness are complete.
-  Nine evaluation suites (code, math, repository, long-context, and multi-agent) are prepared, and
-  the large-scale runner (concurrent, checkpointed and resumable, roughly 300k receiver runs across
-  a nine-model sweep) is validated end to end on local open models. The benchmark is ready to run.
-- **Late Aug to Sep 2026:** throughput calibration, then the first full evaluation on the
-  small-model wave (8 to 14B) across all suites, with deferred cross-review judge scoring, and the
-  first public results.
-- **Sep to Oct 2026:** the large-model wave (quantized 27 to 35B), SWE-bench native test-verified
-  scoring, and a results leaderboard others can track.
-- **Q4 2026:** Intelligence Layer v0.1, the learned selector and reranker, trained on the
-  accumulated episodes (synthetic data; see [docs/MODEL-CARD.md](docs/MODEL-CARD.md)) and reported
-  against the deterministic Core baseline.
-- **Beyond:** adaptive context feeding, multi-agent swarm evaluation at scale, and schema v0.2.
+- **Now (Sep 2026):** the Core reference implementation and the MCTP-Bench harness are complete,
+  and the large-scale open-model run is underway across the suites (code, math, repository,
+  long-context, and multi-agent). Interim results are published, QA scoring is robust to
+  formatting and rewording, and a local full-audit review app supports human grading and flagging.
+- **Next (the headline direction):** the multi-agent swarm evaluation with pipeline depth (3, 5,
+  and 8 handoffs) and cross-family arrangements, where a carried decision must survive every hop.
+  This is where MCTP's believed-state is expected to separate from summary and retrieval, which
+  cannot track state across handoffs.
+- **Also next:** complete the capable-model sweep, fix the repobench and swebench scoring, add
+  native SWE-bench test-verified scoring, and run the deferred cross-review judge pass.
+- **Then:** retrieval-augmented selection (`mctp-r`) evaluated head to head, and Intelligence Layer
+  v0.1, the learned selector and reranker (synthetic data; see
+  [docs/MODEL-CARD.md](docs/MODEL-CARD.md)), reported against the deterministic Core baseline.
+- **Beyond:** adaptive context feeding, larger multi-agent swarm evaluation, and schema v0.2.
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) for the detailed phase plan.
 
