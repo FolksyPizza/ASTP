@@ -94,10 +94,50 @@ increasing frequency as depth grows; ASTP holds both accuracy and a flat token c
 The advantage should therefore widen as the pipeline lengthens, which is the property a swarm
 stresses and a single handoff does not.
 
+## Where transcript wins, and the limits of ASTP
+
+This comparison is only useful if it is honest about the cases ASTP does not win.
+
+- **When the full history fits the receiver's window, transcript is a strong baseline and may be
+  more accurate than ASTP.** It contains everything; ASTP's selector, or an imperfect extractor,
+  can drop a node the receiver needed. In our own long-context results, a 27B at a 128K window
+  scored 61% under transcript against 59% under ASTP: transcript slightly more accurate, ASTP
+  winning only on token cost (about 69x fewer). ASTP's accuracy advantage appears once the
+  transcript overflows the window and is truncated (the same suite on an 8K window: 54% under ASTP
+  against 37% under transcript). With today's large windows, that overflow point requires a
+  genuinely long horizon, a very large codebase, or many hops.
+- **ASTP depends on extraction fidelity, and transcript does not.** A transcript has no way to
+  omit a fact it was given; ASTP can, if the extractor fails to capture or link it. That failure
+  mode is ASTP's alone and is the current ceiling on its real-world use.
+- **The selector can prune something load-bearing.** Even with perfect extraction, a budget or a
+  relevance score can drop a node that turns out to matter. Transcript never makes that mistake
+  within its window.
+- **The machinery is not free.** Building and maintaining the state graph, extracting it, and
+  selecting from it is more moving parts than concatenating a transcript. On short, small tasks the
+  overhead is not worth it; the payoff is in the large, long, multi-hop regime.
+
+So the defensible always-true claim is efficiency: bounded cost and no overflow, at accuracy no
+worse than transcript when the transcript fits, and better than transcript when it does not.
+Against summary, ASTP is stronger on both accuracy and provenance. The place ASTP is expected to
+win outright, on both axes at once, is the overflow regime a deep swarm or a large codebase
+produces.
+
+## What the evidence shows so far
+
+Proven: on long-context tasks, ASTP matches transcript accuracy at a small fraction of the tokens
+when the context fits, and beats transcript on accuracy when the context overflows a small window.
+ASTP beats summary and TF-IDF retrieval on accuracy across the board.
+
+Not yet proven: the deep-swarm claim itself. The depth-axis swarm suite is designed to test whether
+ASTP's advantage widens with handoff depth, and it has not finished running. Until it has, the
+multi-agent advantage is a well-motivated hypothesis with supporting single-hop evidence, not a
+measured result. This document will be updated with the swarm numbers when the run completes.
+
 ## Summary
 
 Transcript is complete but unbounded and unstructured; summary is compact but lossy and
 un-auditable. ASTP is the only one of the three that is at once compact, complete (via
-retrieve-on-demand), provenance-preserving, and auditable, and those are the properties a chain of
-handoffs demands. That is why the multi-agent case, rather than single-turn context reduction, is
-the protocol's central claim.
+retrieve-on-demand), provenance-preserving, and auditable. Those properties make it the strongest
+choice for a deep chain of handoffs, and the efficiency win holds unconditionally, but the accuracy
+win over a well-fed transcript is specific to the regime where the transcript no longer fits. That
+regime, long horizons and large codebases, is what the swarm evaluation exists to measure.
