@@ -1,6 +1,6 @@
 # Experiments
 
-This is the experiment record for MCTP. It reports the current large-scale evaluation. Earlier
+This is the experiment record for ASTP. It reports the current large-scale evaluation. Earlier
 work used a small set of hand-authored scenarios run on hosted models; that setup has been
 retired in favor of the standard public suites below, which are larger, model-agnostic, and
 scored objectively.
@@ -18,7 +18,7 @@ task:
 Each task is run once per condition. Task success is an objective check: code suites execute the
 produced function against unit tests, and the math and long-context suites use exact-match answer
 checks. The delivered-context size is measured with the tiktoken `o200k_base` encoding. The
-harness, adapters, and scorers live in the MCTP-Bench repository.
+harness, adapters, and scorers live in the ASTP-Bench repository.
 
 ## Results (interim)
 
@@ -41,13 +41,13 @@ tolerates markdown, punctuation, and rewording.)
 
 The low-context suites (gsm8k, humaneval, mbpp) tie across all four conditions. These tasks carry
 little prunable prior context, so the delivery method does not change the outcome. This is the
-expected baseline and confirms MCTP does not cost accuracy where there is nothing to select.
+expected baseline and confirms ASTP does not cost accuracy where there is nothing to select.
 
-The long-context suite is where the conditions separate. On longbench, MCTP nearly matches the
+The long-context suite is where the conditions separate. On longbench, ASTP nearly matches the
 accuracy of the full transcript (59% against 61%) while delivering about one sixty-ninth of the
 context (180 tokens against 12,360), and it scores about thirteen points above both same-model
 summarization and TF-IDF retrieval. On the smaller models, whose 8192-token window forces the
-transcript to truncate, MCTP wins outright. This is the mechanism working as intended: it holds
+transcript to truncate, ASTP wins outright. This is the mechanism working as intended: it holds
 the accuracy of sending everything at a fraction of the token cost.
 
 ## Pending
@@ -59,5 +59,5 @@ the accuracy of sending everything at a fraction of the token cost.
   cannot, is still running.
 - Additional models and trials.
 
-Per-suite tables and the full methodology are maintained in the MCTP-Bench
-[results doc](https://github.com/FolksyPizza/MCTP-Bench/blob/main/docs/RESULTS.md).
+Per-suite tables and the full methodology are maintained in the ASTP-Bench
+[results doc](https://github.com/FolksyPizza/ASTP-Bench/blob/main/docs/RESULTS.md).

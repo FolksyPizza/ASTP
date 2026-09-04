@@ -1,11 +1,11 @@
-# Model Context Transfer Protocol
+# Agent State Transfer Protocol
 
-MCTP is a protocol for carrying agent state across handoffs: between the agents of a swarm, or
+ASTP is a protocol for carrying agent state across handoffs: between the agents of a swarm, or
 between models in a chain. Instead of passing an entire conversation history from one agent to the
-next, MCTP represents the important state explicitly, hands off the high-value current state,
+next, ASTP represents the important state explicitly, hands off the high-value current state,
 references deeper artifacts, and retrieves their details only when they are needed.
 
-MCTP is built for multi-agent workflows, where the same state passes through many hands. It is not
+ASTP is built for multi-agent workflows, where the same state passes through many hands. It is not
 primarily a compression system; it separates persistent agent state from active model context.
 Its operating principle is *preserve everything, propagate selectively, retrieve precisely*: the
 complete state (decisions, constraints, artifacts, provenance, and superseded approaches) is
@@ -18,7 +18,7 @@ Agent swarms and model-to-model chains hand off work as raw transcripts or free-
 Both degrade as the work passes through more agents. A transcript grows with the whole accumulated
 history until it strains or overflows the context window, and it drags along stale content
 (abandoned approaches, superseded decisions). A summary re-interprets the state at every hop,
-drifting and dropping the provenance and detail the next agent needs. MCTP instead hands off an
+drifting and dropping the provenance and detail the next agent needs. ASTP instead hands off an
 explicit, provenance-tracked representation of the current state that stays compact and accurate
 across an arbitrary number of handoffs, with the original source material available on demand.
 
@@ -26,22 +26,23 @@ This is where the advantage is structural rather than incidental. A summary cann
 agent established a fact and whether it was later superseded, and plain retrieval has no state
 model at all. Only an explicit, event-sourced believed-state survives a chain of handoffs intact,
 which is why the multi-agent case, not context reduction on a single turn, is the protocol's
-central claim.
+central claim. See [docs/SWARMS.md](docs/SWARMS.md) for why this holds across a deep chain of
+handoffs where transcript and summary degrade.
 
-Scope is deliberately limited. MCTP does not attempt to solve AI memory in general, does not
+Scope is deliberately limited. ASTP does not attempt to solve AI memory in general, does not
 replace retrieval, and does not guarantee optimal context selection. See
 [docs/DESIGN.md](docs/DESIGN.md) for the full list of non-goals.
 
-## Transcript vs. summary vs. MCTP
+## Transcript vs. summary vs. ASTP
 
 Three ways to hand work from one agent to the next:
 
 - **Transcript** sends everything: "here is all of it, you figure it out."
 - **Summary** sends an interpretation: "another model decided what you should know."
-- **MCTP** preserves everything, sends the relevant current state, and keeps the underlying
+- **ASTP** preserves everything, sends the relevant current state, and keeps the underlying
   evidence retrievable on demand.
 
-| | Transcript | Summary | MCTP |
+| | Transcript | Summary | ASTP |
 |---|---|---|---|
 | What the receiver gets | The full history | An LLM's condensed interpretation | Selected current-state nodes plus artifact references |
 | Extra inference to prepare it | None | A summarization call (its cost must be counted) | None (deterministic selection) |
@@ -54,12 +55,12 @@ Three ways to hand work from one agent to the next:
 | Built for agent-to-agent handoff | No | No | Yes |
 
 The evaluation treats transcript, summary (counting the summarizer's inference), conventional
-retrieval (RAG), and MCTP as separate baselines; see the
-[benchmark design](https://github.com/FolksyPizza/MCTP-Bench/blob/main/docs/BENCHMARK.md).
+retrieval (RAG), and ASTP as separate baselines; see the
+[benchmark design](https://github.com/FolksyPizza/ASTP-Bench/blob/main/docs/BENCHMARK.md).
 
 ## Architecture
 
-MCTP is organized into three layers.
+ASTP is organized into three layers.
 
 1. State layer: the explicit, high-value context that is always transferred, comprising goals,
    decisions (including rejected alternatives and supersession), constraints, and dependencies.
@@ -81,7 +82,7 @@ protocol. See [docs/DESIGN.md](docs/DESIGN.md).
 ## Repository layout
 
 ```
-core/mctp/     Core reference implementation (event-sourced store, selector, transfer)
+core/astp/     Core reference implementation (event-sourced store, selector, transfer)
 docs/          PRIMER.md (start here), DESIGN.md (rationale), ARCHITECTURE.md (mechanics),
                ROADMAP.md, schema-v0.1.md, EXPERIMENTS.md, RESEARCH-LOG.md
 bench/         local viability probe and handoff example
@@ -89,7 +90,7 @@ intelligence/  optional Intelligence Layer (design notes)
 ```
 
 The evaluation harness lives in the companion repository
-[MCTP-Bench](https://github.com/FolksyPizza/MCTP-Bench).
+[ASTP-Bench](https://github.com/FolksyPizza/ASTP-Bench).
 
 ## Current results
 
@@ -113,18 +114,18 @@ Cells are pass rate / average context tokens.
 
 On the low-context suites (gsm8k, humaneval, mbpp) the four conditions fall within a point of each
 other. These tasks carry little prunable context, so the delivery method does not change the
-outcome; MCTP does not cost accuracy where there is nothing to select.
+outcome; ASTP does not cost accuracy where there is nothing to select.
 
-The long-context suite is where the delivery method separates. On longbench, MCTP nearly matches
+The long-context suite is where the delivery method separates. On longbench, ASTP nearly matches
 the full transcript (59% against 61%) while delivering about one sixty-ninth of the context
 (180 tokens against 12,360), and it scores about thirteen points above both same-model
 summarization and TF-IDF retrieval. On the smaller models, whose 8192-token window forces the
-transcript to truncate, MCTP wins outright. That is the intended result: the accuracy of sending
+transcript to truncate, ASTP wins outright. That is the intended result: the accuracy of sending
 everything at a fraction of the token cost.
 
 The repobench, swebench, and multi-agent (swarm) suites are still being finalized and are not yet
-reported. Full methodology and the per-suite tables are in the MCTP-Bench
-[results doc](https://github.com/FolksyPizza/MCTP-Bench/blob/main/docs/RESULTS.md).
+reported. Full methodology and the per-suite tables are in the ASTP-Bench
+[results doc](https://github.com/FolksyPizza/ASTP-Bench/blob/main/docs/RESULTS.md).
 
 ## Limitations
 
@@ -134,7 +135,7 @@ reported. Full methodology and the per-suite tables are in the MCTP-Bench
 - Two suites are not yet reportable: repobench pending a completion-prompt fix, and swebench
   pending native test-verified scoring.
 - The clearest wins are on long-context and multi-agent handoffs. On cold-start, low-context
-  tasks MCTP neither helps nor hurts, as expected when there is nothing to select.
+  tasks ASTP neither helps nor hurts, as expected when there is nothing to select.
 - Scoring is automated (execution for code, robust answer matching for QA); human validation is
   in progress through the review tooling, and a deferred judge pass will add graded review.
 - The believed-state graphs for the synthetic suites are built by the adapters, not produced by a
@@ -144,13 +145,13 @@ reported. Full methodology and the per-suite tables are in the MCTP-Bench
 
 Approximate targets for a research prototype, not commitments; dates may move as results come in.
 
-- **Now (Sep 2026):** the Core reference implementation and the MCTP-Bench harness are complete,
+- **Now (Sep 2026):** the Core reference implementation and the ASTP-Bench harness are complete,
   and the large-scale open-model run is underway across the suites (code, math, repository,
   long-context, and multi-agent). Interim results are published, QA scoring is robust to
   formatting and rewording, and a local full-audit review app supports human grading and flagging.
 - **Next (the headline direction):** the multi-agent swarm evaluation with pipeline depth (3, 5,
   and 8 handoffs) and cross-family arrangements, where a carried decision must survive every hop.
-  This is where MCTP's believed-state is expected to separate from summary and retrieval, which
+  This is where ASTP's believed-state is expected to separate from summary and retrieval, which
   cannot track state across handoffs.
 - **Also next:** complete the capable-model sweep, fix the repobench and swebench scoring, add
   native SWE-bench test-verified scoring, and run the deferred cross-review judge pass.

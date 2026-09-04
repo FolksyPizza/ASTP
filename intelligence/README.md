@@ -1,6 +1,6 @@
-# MCTP Intelligence Layer (optional add-on)
+# ASTP Intelligence Layer (optional add-on)
 
-**Not part of the Core protocol.** Everything here sits *on top of* Core MCTP and is
+**Not part of the Core protocol.** Everything here sits *on top of* Core ASTP and is
 optional, Core is fully usable (ingest, store, audit, retrieve, transfer) with the
 deterministic baseline selector and zero trained models.
 

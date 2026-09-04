@@ -7,21 +7,21 @@ Story (a Minecraft Folia example):
   - Agent B must now implement the lease-based fix in NodeTransfer.
 
 The graph deliberately contains an entire irrelevant subsystem (biome rendering) and a
-superseded decision, so the probe can show that MCTP transfer (a) excludes irrelevant
+superseded decision, so the probe can show that ASTP transfer (a) excludes irrelevant
 state and (b) never ships the stale decision — which a flat dump does.
 """
 from __future__ import annotations
 
-from mctp import MCTPStore, Provenance
+from mctp import AstpStore, Provenance
 
 
 def _p(agent="agent_A", model="model-x", ts=0, source="transcript", conf=1.0):
     return Provenance(source=source, agent=agent, model=model, timestamp=ts, confidence=conf)
 
 
-def build_scenario() -> tuple[MCTPStore, str]:
+def build_scenario() -> tuple[AstpStore, str]:
     """Return (store, handoff_task_id) for Agent B's continuation."""
-    s = MCTPStore()
+    s = AstpStore()
 
     # --- Tasks ----------------------------------------------------------------
     s.assert_node("task_A", "task",

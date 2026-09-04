@@ -11,3 +11,6 @@ benchmark-review/data/
 # Private OCI bucket access — contains a private key, never commit
 oci-bucket-access/
 oci-bucket-access.zip
+
+# Local review app (instance labels + local paths; not for the public repo)
+benchmark-review/

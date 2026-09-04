@@ -1,11 +1,11 @@
-# Model Card, MCTP Intelligence Layer (learned selector/reranker)
+# Model Card, ASTP Intelligence Layer (learned selector/reranker)
 
 Status: not yet trained. This card is published in advance so the training data and intended use
 are declared before any model exists, and will be completed when a model is released.
 
 ## What the model is
 
-The optional MCTP Intelligence Layer includes a learned reranker / sufficiency predictor that
+The optional ASTP Intelligence Layer includes a learned reranker / sufficiency predictor that
 scores and prunes the candidate set produced by the deterministic Core selector (see
 [ARCHITECTURE.md](ARCHITECTURE.md)). It is **not** a language model: it is a lightweight ranking
 model over provenance-tagged candidate features (node type, relation distance, recency,
@@ -16,7 +16,7 @@ the model's contribution is measured strictly as the delta above the determinist
 ## Training data, synthetic
 
 The reranker is trained on **synthetic data**. The training signal is the per-node episode labels
-collected by MCTP-Bench (which packet nodes the receiver used vs. left unused to precision; nodes
+collected by ASTP-Bench (which packet nodes the receiver used vs. left unused to precision; nodes
 the receiver had to retrieve or read from source to recall/misses). The cleanest, ground-truth
 labels come from the **synthetic control suites**, where the correct state and the deliberate
 traps are known by construction:

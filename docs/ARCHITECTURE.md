@@ -1,10 +1,10 @@
-# MCTP Architecture
+# ASTP Architecture
 
 How the Core reference implementation works, end to end. This document describes the actual
 mechanics and code paths; for the design rationale and non-goals see [DESIGN.md](DESIGN.md),
 and for the state/event schema see [schema-v0.1.md](schema-v0.1.md).
 
-The Core implementation is in `core/mctp/`: `model.py` (types), `store.py` (event log and
+The Core implementation is in `core/astp/`: `model.py` (types), `store.py` (event log and
 materialized graph), `retrieval.py` (the selector), and `transfer.py` (packet construction).
 It is dependency-free Python.
 
@@ -31,7 +31,7 @@ of truth. This makes the same log replayable, auditable, and the basis for the a
 
 ## The event log
 
-`MCTPStore` holds an ordered list of `Event` records, each with a monotonic `seq`, a `type`
+`AstpStore` holds an ordered list of `Event` records, each with a monotonic `seq`, a `type`
 from a closed set, a `payload`, and `Provenance` (source, agent, model, timestamp, confidence).
 Events are appended through convenience methods rather than constructed directly:
 
@@ -51,7 +51,7 @@ graph walker, the adapters, and evaluation reproducible.
 
 ## Materialization and believed state
 
-`MCTPStore.materialize()` folds the log into a `Graph` of `nodes`, `edges`, and `blobs` by
+`AstpStore.materialize()` folds the log into a `Graph` of `nodes`, `edges`, and `blobs` by
 replaying events in order:
 
 - `node_asserted` creates or replaces a `Node`.
@@ -141,9 +141,9 @@ the prefix of the log. `record_transfer` additionally logs exactly which nodes w
 task, which, together with the receiver's later pulls, is the observable signal the evaluation
 harness turns into recall/precision labels.
 
-## How MCTP-Bench exercises this
+## How ASTP-Bench exercises this
 
-The [MCTP-Bench](https://github.com/FolksyPizza/MCTP-Bench) harness builds a `Graph` per
+The [ASTP-Bench](https://github.com/FolksyPizza/ASTP-Bench) harness builds a `Graph` per
 scenario, then constructs two contexts: `flat` (the raw transcript) and `mctp` (the selector's
 packet plus a retrievable blob map). A runner, a real model or the deterministic `MockRunner`
 , answers from each context, and the run is scored into an episode record: context tokens,

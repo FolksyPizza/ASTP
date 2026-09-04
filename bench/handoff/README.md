@@ -5,7 +5,7 @@ answer the same neutral question ("take over bug #43") from two different contex
 
 - `baseline_transcript.txt`: the raw Agent-A session log (file dumps, benchmark output, and
  the abandoned distributed-locking approach).
-- `mctp_packet.txt`: the MCTP structured packet from the Core selector, with artifacts as
+- `mctp_packet.txt`: the ASTP structured packet from the Core selector, with artifacts as
  references and retrieve-on-demand.
 
 Gold answer: (1) time-bounded leases; (2) renew the lease before copying node state;
@@ -13,4 +13,4 @@ Gold answer: (1) time-bounded leases; (2) renew the lease before copying node st
 
 This directory is an illustrative example only. The canonical evaluation, including the full
 scenario suite, scored episodes, and token counts under real tokenizers, lives in the
-MCTP-Bench harness; see `../../MCTP-Bench` and `../docs/EXPERIMENTS.md`.
+ASTP-Bench harness; see `../../ASTP-Bench` and `../docs/EXPERIMENTS.md`.

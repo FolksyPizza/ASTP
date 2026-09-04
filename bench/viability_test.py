@@ -1,4 +1,4 @@
-"""Rough viability probe for MCTP v0.1.
+"""Rough viability probe for ASTP v0.1.
 
 WHAT THIS PROVES: the Core plumbing works end-to-end (event log -> materialized graph ->
 believed-state -> baseline selection -> structured transfer -> audit), and that a
@@ -6,7 +6,7 @@ structured handoff is smaller than a naive flat dump on a realistic toy scenario
 NOT shipping a superseded decision the flat dump would.
 
 WHAT THIS DOES NOT PROVE: that Agent B actually succeeds on the smaller packet. That needs
-a model in the loop and is the job of MCTP-Bench. Token counts use a ~4 chars/token
+a model in the loop and is the job of ASTP-Bench. Token counts use a ~4 chars/token
 estimate, not a real tokenizer. Treat the number as a mechanics signal, not an efficacy
 result.
 """
@@ -30,7 +30,7 @@ def main() -> None:
     flat = flat_context(store)
     flat_tokens = estimate_tokens(flat)
 
-    # MCTP structured handoff via the Core cold-start selector.
+    # ASTP structured handoff via the Core cold-start selector.
     packet_nodes = cold_start_select(graph, task_id)
     packet = build_packet(graph, packet_nodes, task_id)
     packet_tokens = estimate_tokens(packet)
@@ -41,14 +41,14 @@ def main() -> None:
 
     selected_ids = {n.id for n in packet_nodes}
     print("=" * 68)
-    print("MCTP v0.1 — rough viability probe (mechanics + token delta)")
+    print("ASTP v0.1 — rough viability probe (mechanics + token delta)")
     print("=" * 68)
     print(f"Graph:            {total} nodes ({believed} believed, "
           f"{total - believed} not-believed), {len(graph.edges)} edges")
     print(f"Handoff task:     {task_id} — {graph.nodes[task_id].content[:60]}...")
     print()
     print(f"Flat dump:        {flat_tokens:>5} tokens  (all asserted nodes, stale included)")
-    print(f"MCTP packet:      {packet_tokens:>5} tokens  ({len(packet_nodes)} nodes)")
+    print(f"ASTP packet:      {packet_tokens:>5} tokens  ({len(packet_nodes)} nodes)")
     print(f"Token reduction:  {reduction:5.1f}%")
     print()
     print("Selected for B:  ", ", ".join(sorted(selected_ids)))
@@ -78,7 +78,7 @@ def main() -> None:
 
     print("\nAudit log length:", len(store.log), "events")
     print("-" * 68)
-    print("MCTP PACKET (what Agent B would receive):")
+    print("ASTP PACKET (what Agent B would receive):")
     print("-" * 68)
     print(packet)
 

@@ -1,18 +1,18 @@
-# MCTP Design
+# ASTP Design
 
-Design reference for the Model Context Transfer Protocol. It describes the goals, the
+Design reference for the Agent State Transfer Protocol. It describes the goals, the
 layering, the data model, the delivery strategy, the feedback interface used for evaluation,
 and the roadmap. The wire and state schema is in [schema-v0.1.md](schema-v0.1.md); the
 evaluation methodology and results are in [EXPERIMENTS.md](EXPERIMENTS.md).
 
 ## Goals and non-goals
 
-MCTP represents the state a receiving model or agent needs to continue work, and transfers
+ASTP represents the state a receiving model or agent needs to continue work, and transfers
 that state rather than a raw conversation history. The objective is to preserve task success
 while reducing the amount of context transferred; it is not primarily a compression system,
 and lossless transfer is not a goal.
 
-MCTP does not attempt to: solve AI memory in general; replace model reasoning; eliminate
+ASTP does not attempt to: solve AI memory in general; replace model reasoning; eliminate
 retrieval; perfectly understand every task; replace human engineering judgment; guarantee
 optimal or lossless context selection; create a universal AI architecture; or act as a
 low-latency message bus.
@@ -22,16 +22,16 @@ collaboration; improve auditability; and improve the cost/performance tradeoff.
 
 ## Layering: Core and Intelligence
 
-MCTP is split into two layers so the protocol never depends on any learned component.
+ASTP is split into two layers so the protocol never depends on any learned component.
 
-- Core MCTP (the protocol): state representation, memory storage, an audit log, retrieval
+- Core ASTP (the protocol): state representation, memory storage, an audit log, retrieval
  including a deterministic cold-start selector, provenance, and context transfer. Core is
  fully usable with zero trained models.
 - Intelligence Layer (optional, learned): context ranking, sufficiency prediction, retrieval
  planning, cost optimization, adaptive/predictive feeding. These sit on top of Core and only
  replace or augment the baseline selector's ranking.
 
-Only Core is the portable protocol. MCTP-the-format and MCTP-the-selector-model are separable;
+Only Core is the portable protocol. ASTP-the-format and ASTP-the-selector-model are separable;
 generalization across model families is claimed only for the format.
 
 ## Roles: extractor and selector
@@ -39,7 +39,7 @@ generalization across model families is claimed only for the format.
 Two model roles are kept separate because they have different evaluation criteria and risk
 profiles.
 
-- Extractor (ingestion): turns raw agent context into structured MCTP nodes with provenance,
+- Extractor (ingestion): turns raw agent context into structured ASTP nodes with provenance,
  incrementally as an agent works. Its recall is the ceiling on the whole system; anything it
  drops, the selector cannot recover.
 - Selector (transfer/retrieval): given the materialized graph, a task, and a budget, returns a
@@ -130,7 +130,7 @@ Correctness is the primary metric; token reduction matters only when task succes
 maintained. Reported cost is total tokens including retrieval, never the initial packet alone.
 Every episode records enough to reproduce it. The target is the best accuracy/cost tradeoff,
 not the smallest possible context. Methodology and results are in [EXPERIMENTS.md](EXPERIMENTS.md);
-the benchmark suite design is in the MCTP-Bench repository.
+the benchmark suite design is in the ASTP-Bench repository.
 
 ## Roadmap
 
@@ -140,7 +140,7 @@ the benchmark suite design is in the MCTP-Bench repository.
 - v0.2+: trained selector (the learning loop), three-tier storage and maintenance, adaptive
  feeding, abstractive bridge notes, multi-model adapters, a concurrency model, and security
  mitigations.
-- v0.3: native integration, in which MCTP observes the agent environment, snapshots state, and
+- v0.3: native integration, in which ASTP observes the agent environment, snapshots state, and
  delivers optimized context inline. Gated on the feedback/observation interface.
 
 ## Open questions
@@ -148,13 +148,13 @@ the benchmark suite design is in the MCTP-Bench repository.
 Foundational decisions taken for v0.1 include the identity and coreference scheme, the closed
 relation vocabulary, retraction as a first-class event, the negotiation-based selection
 contract, the decoupled trust model, and the benchmark fairness rules. Remaining research
-questions include: how to measure extraction fidelity (the system's true ceiling); where MCTP's
+questions include: how to measure extraction fidelity (the system's true ceiling); where ASTP's
 own overhead breaks even against the context it saves; the concurrency model for concurrent
 writers; retrieval reproducibility for audit; and the false-positive rate of adaptive feeding.
 
 ## Security
 
-MCTP state is attacker-controllable input to the next model and persists across agents, so a
-poisoned node is a stored prompt injection. Planned mitigations: treat MCTP content as data
+ASTP state is attacker-controllable input to the next model and persists across agents, so a
+poisoned node is a stored prompt injection. Planned mitigations: treat ASTP content as data
 rather than instructions, gate trust on provenance, sign provenance across trust boundaries,
 enforce subgraph access control, and isolate namespaces across projects.

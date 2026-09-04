@@ -1,4 +1,4 @@
-"""MCTP v0.1 — event-sourced store.
+"""ASTP v0.1 — event-sourced store.
 
 The append-only event log is the single source of truth. `materialize()` folds the log
 into a graph (the "current state" view). Active/historical tiers and compaction are v0.2;
@@ -54,7 +54,7 @@ class Graph:
         return out
 
 
-class MCTPStore:
+class AstpStore:
     def __init__(self) -> None:
         self.log: list[Event] = []
         self._seq = 0

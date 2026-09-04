@@ -1,4 +1,4 @@
-"""MCTP v0.1 — Core retrieval / cold-start selector.
+"""ASTP v0.1 — Core retrieval / cold-start selector.
 
 This is the *deterministic baseline* the Intelligence Layer later replaces/augments with
 a learned ranker. It exists so Core is fully usable with zero trained models.
@@ -18,7 +18,7 @@ _TYPE_ORDER = {"task": 0, "decision": 1, "artifact": 2, "entity": 3}
 
 def estimate_tokens(text: str) -> int:
     """Cheap, model-agnostic token estimate (~4 chars/token). Good enough for a probe;
-    swap for a real tokenizer in MCTP-Bench."""
+    swap for a real tokenizer in ASTP-Bench."""
     return max(1, len(text) // 4)
 
 
@@ -39,7 +39,7 @@ def cold_start_select(graph: Graph, task_id: str, budget_tokens=None, max_hops: 
     to the task query. When present and a budget applies, the packet still guarantees the load-
     bearing state (the task and every decision node, provenance that a pure retriever cannot
     reconstruct), then fills the remaining budget with the supporting artifacts and entities
-    ranked by relevance rather than by hop distance. This is retrieval inside MCTP: the structural
+    ranked by relevance rather than by hop distance. This is retrieval inside ASTP: the structural
     guarantee of believed-state with the precision of relevance-scored selection."""
     if task_id not in graph.nodes:
         raise KeyError(f"unknown task node: {task_id}")

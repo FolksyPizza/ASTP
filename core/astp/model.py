@@ -1,4 +1,4 @@
-"""MCTP v0.1 — core data model.
+"""ASTP v0.1 — core data model.
 
 Everything is derived from an append-only event log (see store.py). These dataclasses
 describe the *materialized* state and the events that produce it. Kept dependency-free.

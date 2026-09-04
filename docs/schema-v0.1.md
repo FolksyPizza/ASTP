@@ -1,7 +1,7 @@
-# MCTP v0.1, State & Event Schema
+# ASTP v0.1, State & Event Schema
 
 The event log is the **source of truth**. State (the graph) is a *materialized view* of
-the log. This document is the normative reference; `core/mctp/` is the reference impl.
+the log. This document is the normative reference; `core/astp/` is the reference impl.
 
 ## Closed vocabularies
 

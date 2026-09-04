@@ -1,4 +1,4 @@
-# MCTP Research Log
+# ASTP Research Log
 
 A running record of decisions, changes, and findings, kept for the eventual paper. Newest entries are at the top. Each entry states what was decided or found and why.
 Experimental numbers live in [EXPERIMENTS.md](EXPERIMENTS.md); this log records the reasoning.
@@ -57,10 +57,10 @@ Correction (SWE-bench, important): the earlier 7B "36x token win" on SWE-bench w
 the weak model patched blind from file references without reading them (pulls=0), likely producing
 wrong patches. With the 14B + inline delivery, mctp inlines the files it needs (avg 46,262 tok) and
 is essentially equal to transcript (53,726 tok), not far smaller. This is the accurate result: SWE-bench's
-snapshot is only the patch-touched files (all relevant), so MCTP has nothing to prune and correctly
-degrades to ~transcript. MCTP's token advantage requires PRUNABLE context, which lives in the
+snapshot is only the patch-touched files (all relevant), so ASTP has nothing to prune and correctly
+degrades to ~transcript. ASTP's token advantage requires PRUNABLE context, which lives in the
 in-house/multifile controls (deliberate noise) and would appear on SWE-bench only if the snapshot
-included sibling/irrelevant repo files. Implication: to test MCTP selection on SWE-bench, enrich the
+included sibling/irrelevant repo files. Implication: to test ASTP selection on SWE-bench, enrich the
 per-instance snapshot with additional repo files; otherwise report SWE-bench as an artifact/retrieval
 and correctness test, not a selection test.
 
@@ -145,7 +145,7 @@ Fixes: RepoBench's cross-file `context` field is a list, not a string, coerced i
 in the extractor. SWE-bench `files` are the patch-touched files read at base_commit.
 
 ### 2026-08-24, Runner concurrency, synthetic-suite expansion, model policy, transparency
-Built (MCTP-Bench):
+Built (ASTP-Bench):
 - Runner concurrency: `--concurrency N` runs N jobs in flight via a thread pool so vLLM batches
  them; shared collectors (result-store shards, manifest, progress, tallies) are locked, and the
  graceful stop/window/resume logic drains in-flight runs cleanly. Added `--retries` (transient
@@ -158,10 +158,10 @@ Built (MCTP-Bench):
 - Model matrix (`bench_plan.py`): a broader per-wave suite spanning families, small wave 5 models
  (qwen2.5-coder 7B/14B, llama3.1 8B, gemma2 9B, qwen3 8B*), large wave 4 models (gemma3 27B,
  qwen2.5 32B, qwen2.5-coder 32B, qwen3 32B*; 32B needs AWQ). Encoded the policy: single-agent
- suites run on >= 2 distinct models (so any MCTP effect is cross-model, not a single-model
+ suites run on >= 2 distinct models (so any ASTP effect is cross-model, not a single-model
  artifact); the multi-agent swarm is exempt. Full program is now ~239k receiver runs, all suites
  ready.
-Transparency (MCTP): added `docs/MODEL-CARD.md` stating up front that the learned reranker (when
+Transparency (ASTP): added `docs/MODEL-CARD.md` stating up front that the learned reranker (when
 trained) is trained on SYNTHETIC episodes (the in-house + generated suites, labeled synthetic),
 with OSS suites held out for evaluation only. Published before any model exists.
 
@@ -199,7 +199,7 @@ single-stream path. Single-stream throughput was ~1-2 s/run warm on the smoke su
 same day by option (a); see the entry titled "Configured the batched inference server".
 
 ### 2026-08-23, Model unloading, wave script, and a cross-category smoke test
-Built (MCTP-Bench):
+Built (ASTP-Bench):
 - Model lifecycle / unload-when-idle: `--window` now takes `--on-pause` / `--on-resume` shell
  hooks (WindowGate runs them when the window closes/opens), and `scripts/serve_vllm.sh` /
  `stop_vllm.sh` start/stop a vLLM server to free the GPU. `scripts/run_wave.sh` runs a wave that
@@ -215,7 +215,7 @@ concern the harness now manages rather than assuming models stay resident.
 Clarification: the runner varies context (the four conditions build different contexts from one
 Source) and iterates models, but each vLLM process serves one model, so model switching is a
 server concern, not something the runner "loads".
-Built (MCTP-Bench):
+Built (ASTP-Bench):
 - Per-model endpoints: `--models` accepts `model@url`, so a sweep can fan out across several vLLM
  servers (e.g. a small model per GPU) instead of assuming one endpoint serves all models.
 - Live telemetry (`mctpbench/telemetry.py`): the runner serves a status snapshot on a localhost
@@ -233,13 +233,13 @@ the current run, saves, and stops (a second Ctrl-C aborts). The stop-file is cle
 so `--resume` continues. Verified offline: stop-file honored, cleared, and resume completes.
 
 ### 2026-08-23, Sweep orchestration, open-model tokenizers, and repo-suite data prep
-Built (MCTP-Bench):
+Built (ASTP-Bench):
 - Orchestration (`mctpbench/orchestrate.py` + `run_benchmark` flags): checkpoint/resume via an
  append-only manifest (interrupt/crash/`--max-hours` loses at most the in-flight run; `--resume`
  continues), a `--window HH:MM-HH:MM` clock gate (wraps midnight, e.g. off-hours only), a
  `--max-hours` budget, and progress with a rolling rate and ETA. Verified offline.
 - Open-model tokenizers as reference counts: `tokenizers.reference_set()` now adds HF tokenizers
- (Qwen, Llama by default; `MCTP_HF_TOKENIZERS` / `MCTP_REF_TOKENIZERS` configurable) to the
+ (Qwen, Llama by default; `ASTP_HF_TOKENIZERS` / `ASTP_REF_TOKENIZERS` configurable) to the
  tiktoken encodings, so amounts are comparable across the families actually run, not only OpenAI's.
 - Repo-suite data prep: `prepare_datasets.py` now materializes SWE-bench `files` per instance by
  checking out repo@base_commit and reading the patch-touched files, and maps RepoBench to our
@@ -260,8 +260,8 @@ run only on bundled samples. No model server contacted.
 ### 2026-08-22, All suites wired: high-context adapters and the multi-handoff tier
 Decision: judging topology is swappable at will, scoring is a post-hoc pass over stored outputs
 and never modifies model data, so the panel/cross-review split can change later without re-running.
-Built (MCTP-Bench): the remaining adapters, so every planned suite is wired. `swebench`
-(issue to patch, repo materialized to MCTP state via the extractor; objective scoring deferred to the
+Built (ASTP-Bench): the remaining adapters, so every planned suite is wired. `swebench`
+(issue to patch, repo materialized to ASTP state via the extractor; objective scoring deferred to the
 SWE-bench harness), `repobench` (cross-file next-line completion, line-match scorer), and
 `longbench` (long-document QA, any-answer match or judge). The subagent/swarm tier is implemented
 as a multi-handoff pipeline (`mctpbench/pipeline.py` + the `swarm` adapter): stages share evolving
@@ -281,7 +281,7 @@ mixed-family judges is reduced to one verdict (median score, majority pass) and 
 aggregates by majority/median; this is the metric validated against a human sample. Cross-review
 is kept as a SECONDARY signal (does peer critique flip the panel, and how far do scores shift),
 because showing judges each other's verdicts introduces anchoring. Cross-review is optional.
-Built (MCTP-Bench): MBPP and GSM8K adapters with objective scorers (unit tests / final-number
+Built (ASTP-Bench): MBPP and GSM8K adapters with objective scorers (unit tests / final-number
 match), completing the low-context suite; and the extractor (`extraction/`), a deterministic
 `HeuristicExtractor` (files to artifact nodes with parsed symbols + import-derived `depends_on`
 edges, task linked to named files) and an `LLMExtractor` skeleton (a model emits the closed v0.1
@@ -311,7 +311,7 @@ is code and configuration; no model server has been contacted and no run perform
 ### 2026-08-22, Large-scale benchmark framework built (no runs yet)
 Decision: implement the full data-capture framework before the first recorded run, so every run
 preserves raw and parsed data additively.
-Built (MCTP-Bench): a streaming runner (`mctpbench/streaming.py`) that captures the verbatim
+Built (ASTP-Bench): a streaming runner (`mctpbench/streaming.py`) that captures the verbatim
 request(s), every streamed chunk with its wall-clock offset, the server `usage` (native token
 counts), and assembled answer/reasoning; a run-record schema and storage tree
 (`mctpbench/records.py`, writing `runs/ raw/ outputs/ judge/ aggregates/ configs/`); the four
@@ -344,7 +344,7 @@ thinking and the answer is never emitted (empty content). Reasoning also multipl
 tokens (~1,100+ for a trivial question; thousands for a handoff), which raises time and cost
 roughly 3-10x over a non-reasoning model of similar size.
 Changes: the runner now extracts the answer robustly (strip `<think>...</think>`, fall back to
-the `reasoning` field), and exposes `--max-tokens` / `MCTP_MAX_TOKENS` (default 2048; use 4096+
+the `reasoning` field), and exposes `--max-tokens` / `ASTP_MAX_TOKENS` (default 2048; use 4096+
 for heavy reasoners). Open item: record output/thinking tokens per episode so total-cost metrics
 count reasoning cost. Reasoning models are exactly where structured state may change the
 cost/benefit, so this must be measured rather than assumed.
@@ -394,7 +394,7 @@ so the selector's packet omitted it and the receiver could not answer.
 Conclusion: this is an extractor/linking failure, not a selector failure. A smarter selector
 would not have fixed it because the node was not in the candidate set. Extraction and linking
 fidelity bound the whole system. Turned into a negative-control scenario so the suite can fail
-MCTP.
+ASTP.
 
 ### 2026-08, First benchmark findings (single trial, Claude, o200k_base)
 Findings across ten hand-authored scenarios:
@@ -435,7 +435,7 @@ Rationale: the protocol must be reproducible, auditable, and model-independent; 
 belongs in a layer on top so its contribution can be measured against a deterministic floor.
 
 ### 2026-08, Positioning: state layer, not summarizer
-Decision: position MCTP as separating persistent agent state from active model context, not as
+Decision: position ASTP as separating persistent agent state from active model context, not as
 a compression or summarization system.
 Rationale: the defensible contribution is structured, provenance-aware state transfer, not
 smaller tokens. Operating principle: preserve everything, propagate selectively, retrieve

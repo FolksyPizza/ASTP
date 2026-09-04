@@ -1,4 +1,4 @@
-"""MCTP v0.1 — Core context transfer (hybrid delivery).
+"""ASTP v0.1 — Core context transfer (hybrid delivery).
 
 `build_packet` renders the hybrid handoff: always-provide high-value state (task,
 decisions, entities) inline, and artifacts as **references** (path + hash + symbols) that
@@ -9,7 +9,7 @@ artifacts to their FULL source, including stale (superseded/contradicted) state.
 """
 from __future__ import annotations
 
-from .store import Graph, MCTPStore
+from .store import Graph, AstpStore
 
 _SECTION = {"decision": "DECISIONS", "artifact": "ARTIFACTS (references — retrieve on demand)",
             "entity": "ENTITIES"}
@@ -46,7 +46,7 @@ def build_packet(graph: Graph, nodes, task_id: str) -> str:
     return "\n".join(lines)
 
 
-def flat_context(store: MCTPStore) -> str:
+def flat_context(store: AstpStore) -> str:
     """Naive raw baseline: every asserted node, with artifacts expanded to full source,
     stale items included. This is the honest 'send everything' comparison."""
     graph = store.materialize()
